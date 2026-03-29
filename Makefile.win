@@ -1,0 +1,50 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Makefile.win — Build untuk Animasi Mercusuar menggunakan MinGW / w64devkit
+# ─────────────────────────────────────────────────────────────────────────────
+
+RAYLIB_PATH = C:/raylib
+
+CC      = gcc
+CFLAGS  = -Wall -O2 \
+          -I. \
+          -I$(RAYLIB_PATH)/include \
+          -Isrc/screens \
+          -Isrc/ui \
+          -Isrc/algo \
+          -Isrc/objects
+LIBS    = -L$(RAYLIB_PATH)/lib -lraylib -lopengl32 -lgdi32 -lwinmm -lm
+
+TARGET  = SUAR.exe
+
+SRCS    = main.c \
+          src/screens/menu.c \
+          src/screens/animasi2d.c \
+          src/screens/about.c \
+          src/screens/guide.c \
+          src/screens/pola2d.c \
+          src/objects/kapal.c \
+          src/objects/alam.c \
+          src/objects/bangunan.c \
+          src/ui/audio.c \
+          src/ui/draw_helpers.c \
+          src/ui/back_button.c \
+          src/algo/bresenham.c \
+          src/algo/dda.c \
+          src/algo/midcircle.c \
+          src/ui/hud.c
+
+RES     = icon.res
+
+all: $(TARGET)
+
+$(TARGET): $(SRCS) $(RES)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(RES) $(LIBS)
+
+$(RES): icon.rc icon.ico
+	windres icon.rc -O coff -o $(RES)
+
+clean:
+	rm -f $(TARGET) $(RES)
+
+run: all
+	./$(TARGET)

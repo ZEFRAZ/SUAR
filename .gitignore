@@ -1,0 +1,11 @@
+# Abaikan file hasil kompilasi
+*.o
+*.res
+*.exe
+SUAR.exe
+
+# Abaikan file pengaturan editor visual studio code
+.vscode/
+
+# Abaikan folder panduan belajar probadi
+Panduan_Kode/
