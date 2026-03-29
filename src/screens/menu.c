@@ -11,10 +11,27 @@ static Texture2D bgTexture;
 static Font customFont; 
 static Font titleFont; 
 
+/**
+ * @brief Fungsi interpolasi linear (Lerp).
+ * 
+ * Menghitung nilai di antara start dan end berdasarkan persentase (amount).
+ * Digunakan untuk membuat animasi transisi halus (smooth) saat kursor menyentuh tombol (hover).
+ * 
+ * @param start Nilai awal.
+ * @param end Nilai akhir tujuan.
+ * @param amount Persentase transisi (0.0 sampai 1.0).
+ * @return float Nilai pada titik interpolasi saat ini.
+ */
 static float Lerp(float start, float end, float amount) {
     return start + amount * (end - start);
 }
 
+/**
+ * @brief Inisialisasi awal layar Menu Utama.
+ * 
+ * Fungsi ini memuat semua aset yang dibutuhkan di Menu Utama (seperti gambar latar
+ * dan font custom) ke dalam RAM/VRAM. Fungsi ini juga mengatur nilai awal efek hover ke 0.
+ */
 void InitMenu(void) {
     bgTexture = LoadTexture("background.png"); 
     
@@ -29,12 +46,27 @@ void InitMenu(void) {
     }
 }
 
+/**
+ * @brief Membersihkan memori aset Menu Utama.
+ * 
+ * Fungsi ini dipanggil saat program aplikasi ditutup untuk melepaskan (unload) tekstur latar 
+ * dan font dari VRAM sehingga mencegah kebocoran memori (memory leak).
+ */
 void UnloadMenu(void) {
     UnloadTexture(bgTexture);
     UnloadFont(customFont); 
     UnloadFont(titleFont); 
 }
 
+/**
+ * @brief Fungsi utama untuk menjalankan perulangan (Update & Draw) di Menu Utama.
+ * 
+ * Fungsi ini akan menghitung segala animasi (seperti logo yang mengambang dan efek lengkung 
+ * tombol ala game) serta menangani klik tombol. Layar dibuat responsif agar teks dan UI
+ * akan menyesuaikan ukuran window.
+ * 
+ * @return ScreenState Layar target berikutnya yang dituju setelah tombol ditekan (misalnya SCREEN_POLA_2D).
+ */
 ScreenState UpdateDrawMenu(void) {
     float dt = GetFrameTime();
     float time = (float)GetTime(); 

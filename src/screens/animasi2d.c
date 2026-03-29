@@ -18,6 +18,17 @@ extern float previewTime;
 #endif
 
 // --- HELPER WARNA & LERP ---
+/**
+ * @brief Algoritma Pencampuran Warna Linear (Color Lerp).
+ * 
+ * Mencampurkan warna 'a' dan warna 'b' secara perlahan berdasarkan persentase waktu 't'.
+ * Fungsi ini digunakan untuk membuat transisi gradasi langit yang mulus antara siang dan malam.
+ * 
+ * @param a Warna awal.
+ * @param b Warna akhir tujuan.
+ * @param t Skalar waktu transisi (0.0 sampai 1.0).
+ * @return Color Hasil campuran rona warna.
+ */
 static Color LerpColor(Color a, Color b, float t) {
     if (t < 0.0f) t = 0.0f; 
     if (t > 1.0f) t = 1.0f;
@@ -29,6 +40,17 @@ static Color LerpColor(Color a, Color b, float t) {
     };
 }
 
+/**
+ * @brief Fungsi penentu warna langit berdasarkan waktu saat ini.
+ * 
+ * Fungsi ini telah mendefinisikan 8 titik waktu cuaca (Stop) dalam sehari (contoh: senja, malam, dll).
+ * Saat dipanggil, fungsi akan mengecek waktu sekarang (time), mencari dua titik waktu terdekat, 
+ * lalu menggunakan LerpColor untuk mencampurkan warna langit tersebut agar terlihat natural.
+ * 
+ * @param time Waktu saat ini (0.0 sampai 24.0).
+ * @param top Output warna gradien langit atas.
+ * @param bot Output warna gradien langit bawah (dekat laut).
+ */
 static void GetSkyColor(float time, Color *top, Color *bot) {
     struct Stop { float t; Color top; Color bot; };
     struct Stop stops[] = {
@@ -57,6 +79,15 @@ static void GetSkyColor(float time, Color *top, Color *bot) {
 // ============================================================================
 // 1. INISIALISASI
 // ============================================================================
+/**
+ * @brief Inisialisasi awal layar Animasi Animasi2DScreen.
+ * 
+ * Memasukkan pengaturan default untuk UI, mengatur cuaca cerah (WEATHER_CLEAR), waktu, ombak, 
+ * angin, dan kecepatan (speed multiplier). Termasuk juga merandom (acak) letak awal
+ * untuk bintang, awan, dan burung di kanvas.
+ * 
+ * @param s Pointer ke data layar Animasi2DScreen.
+ */
 void InitAnimasi2DScreen(Animasi2DScreen *s) {
     s->showHUD = true; s->activeTab = TAB_CONTROL;
     s->isPlaying = true; s->speedMult = 1.0f;
@@ -107,6 +138,15 @@ void InitAnimasi2DScreen(Animasi2DScreen *s) {
 // ============================================================================
 // 2. UPDATE LOGIKA & FISIKA
 // ============================================================================
+/**
+ * @brief Logic & Physics Update Loop untuk Layar Animasi2D.
+ * 
+ * Fungsi ini memperbarui pergerakan waktu siklus harian, pergeseran kapal, kecepatan angin, 
+ * ombak, dan input user (misal: memencet tombol space untuk pause, dll).
+ * Fungsi ini bertanggung jawab atas seluruh hitungan gerakan sebelum digambar di layar.
+ * 
+ * @param s Pointer ke State Layar Animasi2D.
+ */
 void UpdateAnimasi2DScreen(Animasi2DScreen *s) {
     float rawDt = GetFrameTime();
     float uiDt = (rawDt > 0.1f) ? 0.1f : rawDt; 
@@ -282,6 +322,17 @@ void UpdateAnimasi2DScreen(Animasi2DScreen *s) {
 // ============================================================================
 // 3. RENDER VISUAL (DRAWING ENGINE)
 // ============================================================================
+/**
+ * @brief Fungsi penggerak gambar utama untuk layar Animasi2D.
+ * 
+ * Bertanggung jawab sepenuhnya dalam menggambar urutan lapisan objek ke layar.
+ * Urutan gambarnya dari belakang ke depan: 
+ * Langit -> Matahari/Bulan/Bintang -> Awan -> Kapal/Ombak (Layer 3) -> Gunung -> 
+ * Kapal/Ombak (Layer 2) -> Tebing -> Kapal/Ombak (Layer 1) -> Mercusuar -> Hujan -> UI HUD.
+ * Fungsi ini memakai sistem Camera2D agar grafis tidak pecah saat window di-resize.
+ * 
+ * @param s Pointer ke State Layar Animasi2D.
+ */
 void DrawAnimasi2DScreen(Animasi2DScreen *s) {
     int logW = GetScreenWidth(); 
     int logH = GetScreenHeight();

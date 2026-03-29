@@ -1,10 +1,9 @@
 /**
  * @file main.c
- * @brief Titik Awal Eksekusi (Entry Point) untuk Proyek Grafika Komputer "Mercusuar".
+ * @brief File Utama (Entry Point) untuk Proyek Grafika Komputer "Mercusuar".
  * 
- * File ini mengatur instansiasi konteks grafis (Raylib Window Context),
- * merancang struktur tata letak kendali state (Scene Manager), memuat kerangka aset
- * awal seperti icon dan BGM, serta mengekskusi iterasi tiada henti (Render Loop) pada grafis utama.
+ * File ini bertugas untuk membuka window Raylib pertama kali, mengatur perpindahan antar menu
+ * (Scene Manager), meload audio, dan menjalankan perulangan game utama (Game Loop).
  */
 #include "raylib.h"
 #include "menu.h"
@@ -18,11 +17,11 @@
 /**
  * @brief Fungsi Penggerak Utama Proyek.
  * 
- * Melakukan inisialisasi lingkungan 2D berbasis OpenGL, memompa delegasi fungsi 
- * ke berbagai modul layar (Pola 2D, Animasi 2D, Guide, Halaman Utama),
- * serta melepaskan memori kembali ke sistem OS saat siklus Window dihentikan.
+ * Melakukan inisialisasi lingkungan 2D, memanggil fungsi update/draw
+ * dari masing-masing layar (Pola 2D, Animasi 2D, Guide, Menu Utama),
+ * serta membersihkan memori kembali saat aplikasi ditutup.
  * 
- * @return int Nilai kembalian 0 penanda eksekusi keluar dengan sukses (EXIT_SUCCESS).
+ * @return int 0 jika program berhasil dijalankan sampai selesai.
  */
 int main(void) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);

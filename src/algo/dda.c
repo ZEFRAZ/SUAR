@@ -3,9 +3,16 @@
 #include <stdlib.h>
 
 /**
- * Implementasi Digital Differential Analyzer (DDA) untuk menggambar garis lurus.
- * Algoritma ini menentukan jumlah langkah (steps) maksimum berdasarkan selisih absolut
- * pada sumbu X atau Y, lalu melakukan penambahan inkremental pada masing-masing koordinat.
+ * @brief Algoritma Pembentuk Garis DDA (Digital Differential Analyzer).
+ * 
+ * Menggambar garis lurus di layar dari titik (x1, y1) ke (x2, y2).
+ * Cara kerjanya: mencari sumbu pencapaian terjauh (X atau Y) dan menjadikannya patokan jumlah langkah.
+ * Pada tiap langkah, titik koordinatnya akan ditambah perlahan (pakai pecahan float) lalu 
+ * dibulatkan (round) ke koordinat piksel terdekat di layar.
+ * 
+ * @param x1, y1 Koordinat awal.
+ * @param x2, y2 Koordinat akhir sasaran.
+ * @param color Skema warna pixel di layar.
  */
 void DDALine(int x1, int y1, int x2, int y2, Color color) {
     int dx = x2 - x1, dy = y2 - y1;
@@ -34,8 +41,17 @@ void DDALine(int x1, int y1, int x2, int y2, Color color) {
 }
 
 /**
- * Variasi algoritma DDA yang menambahkan mekanisme persinyalan state (drawing/gap)
- * untuk menciptakan efek garis putus-putus secara matematis.
+ * @brief Fungsi penggambar Garis Putus-Putus (Dashed Line) berbasis DDA.
+ * 
+ * Mirip kegunaannya dengan DDA biasa, namun ia bisa bolak-balik antara status 
+ * "menggambar" (sepanjang dashLen) dan status "bolong/hilang" (sepanjang gapLen)
+ * sehingga tercetaklah garis putus-putus. Dipakai saat menggambar rasi bintang (di alam.c).
+ * 
+ * @param x1, y1 Titik permulaan.
+ * @param x2, y2 Titik akhir target.
+ * @param dashLen Jatah panjang yang akan diwarnai penuh.
+ * @param gapLen Jatah panjang lompatan di mana garis tak digambar.
+ * @param color Warna cetak piksel.
  */
 void DDA_DashedLine(int x1, int y1, int x2, int y2, int dashLen, int gapLen, Color color) {
     int dx = x2 - x1, dy = y2 - y1;

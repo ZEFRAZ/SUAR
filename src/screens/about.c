@@ -6,6 +6,15 @@ static Font aboutFont = { 0 };
 static Texture2D bgTextureAbout = { 0 };
 static bool isAboutAssetsLoaded = false;
 
+/**
+ * @brief Fungsi perulangan (Update & Draw) untuk layar About (Tentang Kami).
+ * 
+ * Mengatur tampilan teks profil pembuat (nama, NIM, dll). 
+ * Menggunakan fitur Camera2D dari Raylib agar teks tetap berada di tengah layar
+ * dan menyesuaikan ukuran (scaling) ketika resolusi window diubah secara dinamis.
+ * 
+ * @return ScreenState Layar target berikutnya (kembali ke SCREEN_MENU jika tombol Back ditekan).
+ */
 ScreenState UpdateDrawAbout(void) {
     if (!isAboutAssetsLoaded) {
         aboutFont = LoadFontEx("FredokaOne-Regular.ttf", 64, 0, 0);

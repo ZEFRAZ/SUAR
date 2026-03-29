@@ -3,10 +3,14 @@
 #include <stdlib.h>
 
 /**
- * Implementasi fungsi Bresenham untuk merender garis antar titik.
- * Pendekatan ini menggunakan variabel error (err) untuk mendeduksi
- * waktu yang tepat dalam menaikkan koordinat piksel secara bertahap
- * baik di sumbu X maupun Y.
+ * @brief Algoritma Pembentuk Garis Bresenham.
+ * 
+ * Menggambar sebuah garis dari titik (x1, y1) ke (x2, y2) tanpa menggunakan pembagian pecahan (float/double).
+ * Hanya menggunakan penjumlahan dan pengurangan angka bulat (integer) sehingga sangat cepat diproses komputer.
+ * 
+ * @param x1, y1 Koordinat awal X dan Y.
+ * @param x2, y2 Koordinat tujuan X dan Y.
+ * @param color Warna cetak titik di layar.
  */
 void BresenhamLine(int x1, int y1, int x2, int y2, Color color) {
     int dx = abs(x2 - x1);

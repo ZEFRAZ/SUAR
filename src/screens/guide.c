@@ -6,6 +6,15 @@ static Font guideFont = { 0 };
 static Texture2D bgTextureGuide = { 0 };
 static bool isGuideAssetsLoaded = false;
 
+/**
+ * @brief Fungsi perulangan (Update & Draw) untuk layar Panduan (Guide).
+ * 
+ * Mengatur tampilan teks instruksi penggunaan aplikasi.
+ * Sama seperti menu About, menggunakan fitur Camera2D agar panel panduan
+ * tetap terlihat rapi dan tidak rusak ketika ukuran window diubah (di-resize).
+ * 
+ * @return ScreenState Layar target berikutnya (kembali ke SCREEN_MENU jika ditekan Back).
+ */
 ScreenState UpdateDrawGuide(void) {
     if (!isGuideAssetsLoaded) {
         guideFont = LoadFontEx("FredokaOne-Regular.ttf", 64, 0, 0);

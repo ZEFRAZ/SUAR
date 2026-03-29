@@ -34,12 +34,31 @@ static float leftHovProg = 0.0f;
 static float rightHovProg = 0.0f;
 static float varHovProg[3] = {0.0f, 0.0f, 0.0f};
 
+/**
+ * @brief Pengatur Algoritma Pembuat Garis (DDA / Bresenham).
+ * 
+ * Fungsi ini menerima true/false dari tombol UI (D). Jika true, maka semua
+ * garis di layar akan digambar memakai Bresenham. Jika false, kembali ke DDA.
+ * 
+ * @param useBresenhamAlgo True untuk Bresenham, False untuk DDA.
+ */
 void SetPolaAlgorithm(bool useBresenhamAlgo) {
     g_useBresenham = useBresenhamAlgo;
     SetDrawHelperAlgorithm(useBresenhamAlgo);
 }
 
 // Helper Warna Hover
+/**
+ * @brief Fungsi interpolasi warna untuk tombol UI.
+ * 
+ * Mencampurkan warna awal dan akhir berdasarkan persentase t. 
+ * Khusus dipakai agar tombol panah Next/Prev bisa menyala halus saat di-hover mouse.
+ * 
+ * @param a Warna awal.
+ * @param b Warna akhir sasaran.
+ * @param t Persentase transisi (0.0 sampai 1.0).
+ * @return Color Warna campuran.
+ */
 static Color LerpColorUI(Color a, Color b, float t) {
     return (Color){
         (unsigned char)(a.r + t * (b.r - a.r)),
@@ -51,6 +70,16 @@ static Color LerpColorUI(Color a, Color b, float t) {
 // ============================================================================
 // 4. LAYAR SHOWCASE UTAMA (DIPERBAIKI: 100% ANTI-PECAH SAAT RESIZE)
 // ============================================================================
+/**
+ * @brief Layar Utama Pola 2D (Showcase / Sandbox).
+ * 
+ * Mode layar ini berfungsi sebagai panggung presentasi bagi dosen untuk melihat
+ * satu per satu entitas objek (Kapal, Awan, Mercusuar) terpampang jelas di tengah.
+ * Menggunakan Camera2D agar ukurannya tetap proporsional meskipun window diperbesar/diperkecil.
+ * Kode ini menangani pengecekan tombol Next (>), Prev (<), dan pemilihan sub-Varian.
+ * 
+ * @return ScreenState Akan mengembalikan SCREEN_MENU jika user menekan Back, kalau tidak ya tetap SCREEN_POLA_2D.
+ */
 ScreenState UpdateDrawPola2D(void) {
     if (!isPolaAssetsLoaded) {
         polaFont = LoadFontEx("FredokaOne-Regular.ttf", 64, 0, 0);

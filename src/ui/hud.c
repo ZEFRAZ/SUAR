@@ -16,17 +16,17 @@ static Font hudFont = { 0 };
 static bool isHudFontLoaded = false;
 
 /**
- * @brief Memuat rutinitas penulisan teks pada layar dengan font khusus (Custom Font Text Rendering).
+ * @brief Fungsi penulisan teks pada layar dengan font khusus.
  * 
- * Fungsi jembatan (Wrapper) ini otomatis mendeteksi apakah font kustom sudah dimuat ke VRAM. 
- * Jika ya, maka API `DrawTextEx` milik Raylib akan dipanggil. Jika terjadi kegagalan pemuatan, 
- * sistem secara mulus mundur (*fallback*) ke font bawaan DOS `DrawText`.
+ * Fungsi ini otomatis mendeteksi apakah font kustom sudah berhasil dimuat (load).
+ * Jika ya, maka API `DrawTextEx` akan dipanggil. Jika gagal, akan memakai
+ * font bawaan raylib `DrawText`.
  * 
- * @param text  Rangkaian karakter string yang ingin dicetak.
- * @param x     Koordinat absis (X) dari posisi layar.
- * @param y     Koordinat ordinat (Y) dari posisi layar.
- * @param fontSize Ukuran skala font teks.
- * @param color Warna cetakan tinta font.
+ * @param text Teks yang mau dicetak.
+ * @param x Posisi X di layar.
+ * @param y Posisi Y di layar.
+ * @param fontSize Ukuran font.
+ * @param color Warna teks.
  */
 static void DrawHudText(const char* text, float x, float y, float fontSize, Color color) {
     if (!isHudFontLoaded) {
@@ -37,14 +37,14 @@ static void DrawHudText(const char* text, float x, float y, float fontSize, Colo
 }
 
 /**
- * @brief Kalkulator Lebar String Piksel (String Width Pixel Measurement).
+ * @brief Fungsi menghitung lebar suatu string (teks).
  * 
- * Menghitung ruang porsi lebar (dalam hitungan piksel) yang dibutuhkan oleh serangkaian teks
- * sebelum teks tersebut dirender, sangat penting untuk perhitungan peletakan teks di tengah (Text Centering) pada tombol.
+ * Digunakan untuk menghitung lebar teks dalam satuan piksel agar kita bisa
+ * menaruh teks persis di tengah-tengah sebuah tombol (Text Centering).
  * 
- * @param text Rangkaian karakter string.
- * @param fontSize Skala huruf font.
- * @return float Total rentang panjang teks pada sumbu mendatar.
+ * @param text Teks string.
+ * @param fontSize Ukuran font.
+ * @return float Total lebar teks dalam piksel.
  */
 static float GetHudTextWidth(const char* text, float fontSize) {
     if (!isHudFontLoaded) return (float)MeasureText(text, (int)fontSize);
@@ -55,15 +55,15 @@ static float GetHudTextWidth(const char* text, float fontSize) {
 // Konstanta Skema Pewarnaan Antarmuka (GUI Stateful Color Palette)
 // =============================================================================
 /**
- * @brief Mesin Transisi Tema Latar Belakang (Background Theme State Machine).
+ * @brief Fungsi pengambil warna background tombol berdasarkan statusnya.
  * 
- * Mengembalikan referensi warna palet berdasarkan kondisi terkini tombol UI. 
- * Memiliki hirarki skala warna: Disabled (Abu Gelap) -> Active (Biru Cerah) -> Hover (Biru Sedang) -> Default (Biru Navy).
+ * Mengembalikan warna latar tombol tergantung dari apakah tombolnya sedang diklik (Active),
+ * sedang ditunjuk kursor (Hover), atau mati (Disabled).
  * 
- * @param isActive Status jika tombol sedang aktif bekerja / terseleksi.
- * @param isHover  Status jika kursor tetikus sedang melayang di atas area tombol.
- * @param isDisabled Status mati/redup (tombol tidak bisa berinteraksi).
- * @return Color Representasi warna untuk komponen persegi background.
+ * @param isActive Apakah tombol sedang diklik/terpilih.
+ * @param isHover Apakah kursor mouse sedang berada di atas tombol.
+ * @param isDisabled Apakah tombol sedang terkunci (mati).
+ * @return Color Warna latar belakang tombol.
  */
 static Color GetBgColor(bool isActive, bool isHover, bool isDisabled) {
     if (isDisabled) return (Color){30, 35, 40, 200}; 
@@ -73,15 +73,15 @@ static Color GetBgColor(bool isActive, bool isHover, bool isDisabled) {
 }
 
 /**
- * @brief Mesin Transisi Garis Tepi (Border Stroke State Machine).
+ * @brief Fungsi pengambil warna garis tepi pinggiran (border) tombol.
  * 
- * Serupa dengan GetBgColor, namun diperuntukkan untuk mengkalkulasi skema warna garis neon (Stroke)
- * yang membungkus tepian tombol agar terkesan menyala transparan (Glassmorphism Effect).
+ * Berguna untuk memberikan efek neon yang menyala di tepian tombol
+ * sesuai dengan status tombol tersebut (Aktif/Hover/Mati).
  * 
- * @param isActive Kondisi sorotan tombol terpilih.
- * @param isHover Kursor menimpa ruang batas.
- * @param isDisabled Tombol dibekukan.
- * @return Color Warna tepian list tombol.
+ * @param isActive Apakah tombol sedang diklik.
+ * @param isHover Apakah kursor di atas tombol.
+ * @param isDisabled Apakah tombol terkunci.
+ * @return Color Warna pinggiran tombol.
  */
 static Color GetBorderColor(bool isActive, bool isHover, bool isDisabled) {
     if (isDisabled) return (Color){60, 65, 70, 255};
@@ -94,16 +94,15 @@ static Color GetBorderColor(bool isActive, bool isHover, bool isDisabled) {
 // Prosedur Vektorisasi Ikonografik (Manual Vector Iconography)
 // =============================================================================
 /**
- * @brief Prosedur Penggambaran Ikon Vektor Primitif Khusus (Hardware Vector Icon Draw).
+ * @brief Gambar Ikon UI sederhana (Play, Pause, Matahari, dll) dengan vektor.
  * 
- * Karena proyek ini menghindari *asset* gambar .PNG eksternal secara berlebih demi optimasi kompilasi, 
- * maka ikon-ikon kontrol (Play, Pause, Hujan, Cerah, dst) dirakit murni memakai rumus geometri 
- * dasar (Triangle, Ellipse, Line) meniru gaya lukisan vektor modern.
+ * Ketimbang import banyak gambar PNG yang memperberat game, ikon di UI Hud
+ * digambar secara murni menggunakan perpaduan garis, lingkaran, dan segitiga biasa.
  * 
- * @param type ID Enumerasi gaya logo ikon yang hendak digambar (Misal 5 untuk Matahari).
- * @param cx Parameter *Center-X* / sumbu titik putar X untuk logo.
- * @param cy Parameter *Center-Y* / sumbu titik putar Y untuk logo.
- * @param col Warna garis tinta geometris vektor.
+ * @param type ID Jenis ikon (misal: 1=Mata, 2=Kunci, 5=Matahari).
+ * @param cx Posisi X pusat ikon.
+ * @param cy Posisi Y pusat ikon.
+ * @param col Warna garis ikon.
  */
 static void DrawIconShape(int type, float cx, float cy, Color col) {
     switch(type) {
@@ -151,18 +150,19 @@ static void DrawIconShape(int type, float cx, float cy, Color col) {
 // Komponen Antarmuka Pengguna Kustom (Custom User Interface Components)
 // =============================================================================
 /**
- * @brief Generator Tombol Sentuh Polos Standar (Standard Solid Push Button).
+ * @brief Fungsi untuk menggambar tombol biasa (Push Button).
  * 
- * Menggabungkan pengecekan tabrakan (Raycasting *Point-to-Rectangle* `CheckCollisionPointRec`)
- * dengan perakitan komponen berlapis: *Background* oval, Pantulan Kaca kilap silang (*Gloss Rect*),
- * Garis terang neon tepi, dan cetak teks berparagraf rata-tengah (Center Aligned).
+ * Menggambar tombol kotak melengkung (rounded) dan mengecek apakah 
+ * titik kursor mouse berada di dalam kotak tersebut (Collision).
+ * Selain kotak tombol, fungsi ini juga menggambar pantulan kaca transparan 
+ * di separuh atas tombol agar terlihat seperti tombol UI modern.
  * 
- * @param rect Batasan kotak *Bounding Box* deteksi.
- * @param text Label kata-kata tombol.
- * @param mousePos Posisi sinaran kursor tetikus di layar sekarang.
- * @param isActive Kondisi memala / ditekannya tombol terus menerus.
- * @param isDisabled Kondisi abu-abu pembekuan input.
- * @return true Apabila terjadi peristiwa "Tepat di atas tombol (Hover) DAN baru saja di Klik kiri".
+ * @param rect Ukuran dan posisi kotak tombol.
+ * @param text Tulisan di dalam tombol.
+ * @param mousePos Posisi X dan Y mouse saat ini.
+ * @param isActive Apakah tombol sedang ditekan secara aktif.
+ * @param isDisabled Apakah tombol sedang dimatikan (tidak bisa diklik).
+ * @return true Jika tombol diklik (Hover + klik kiri mouse).
  */
 static bool DrawOceanButton(Rectangle rect, const char* text, Vector2 mousePos, bool isActive, bool isDisabled) {
     bool isHover = !isDisabled && CheckCollisionPointRec(mousePos, rect);
@@ -182,19 +182,19 @@ static bool DrawOceanButton(Rectangle rect, const char* text, Vector2 mousePos, 
 }
 
 /**
- * @brief Generator Tombol Ikonografi Persegi Simetris (Symmetrical Iconography Action Button).
+ * @brief Fungsi untuk menggambar tombol yang memiliki ikon.
  * 
- * Varian turunan dari `DrawOceanButton` namun tanpa menggunakan `DrawHudText`.
- * Tombol ini secara murni mencetak pergeseran matematika `DrawIconShape` memusat ke poros kotak, 
- * dan menambahkan nama label kecil di samping kanannya jika area lebarnya mencukupi.
+ * Mirip dengan DrawOceanButton, tapi fungsi ini juga menambahkan gambar ikon
+ * dari DrawIconShape (seperti Pause, Matahari, Badai). Jika teks dikosongkan (""),
+ * maka yang muncul cuma gambar ikon saja di tengah tombol.
  * 
- * @param rect Batasan hitungan piksel persegi panjang panel.
- * @param iconType Nomor ID varian ikon vektor murni.
- * @param text Teks opsional melayang di sebelah ikon.
- * @param mousePos Sinar pelacakan ujung kursor gawai.
- * @param isActive State Boolean Nyala Statis.
- * @param isDisabled Terkuncinya status pointer menembus panel layar.
- * @return true Terjadi aksi peluncuran penekanan fungsi layar klik kiri persis di batasan `rect`.
+ * @param rect Kotak batasan tombol.
+ * @param iconType ID angka jenis ikon (misalnya: 3 untuk Play).
+ * @param text Teks opsional di samping ikon.
+ * @param mousePos Posisi mouse saat ini.
+ * @param isActive Status tombol nyala terus menerus.
+ * @param isDisabled Status tombol mati total.
+ * @return true Jika area tombol ini berhasil diklik.
  */
 static bool DrawOceanIconButton(Rectangle rect, int iconType, const char* text, Vector2 mousePos, bool isActive, bool isDisabled) {
     bool isHover = !isDisabled && CheckCollisionPointRec(mousePos, rect);
@@ -223,17 +223,18 @@ static bool DrawOceanIconButton(Rectangle rect, int iconType, const char* text, 
 }
 
 /**
- * @brief Generator Tombol Pratinjau Armada Kapal (Ship Fleet Spawner Button).
+ * @brief Fungsi untuk menggambar tombol pemanggil (Spawner) Kapal.
  * 
- * Mencetak kotak informasi kapal lengkap dengan nama spesies (Tipe Utama) dan subspesies (Varian Corak).
- * Ukuran letak *Bounding Box* dicetak proporsional untuk diletakkan bersebelahan di Grid UI Armada.
+ * Dipakai khusus di dalam Menu Armada (Tab Armada). Tombol ini punya bentuk 
+ * dan tulisan yang sedikit berbeda, di mana ada teks Utama (Tipe Kapal) dan
+ * teks kecil transparan di bawahnya (Varian Warna Kapal).
  * 
- * @param rect  Koordinat ruang matriks *Rect* tombol tersebut.
- * @param type  Teks identitas jenis struktur kapal pelayaran (Misal: GALLEON).
- * @param variant Teks tambahan variasi / aksesoris (Misal: Crimson).
- * @param mousePos Koordinat pembidik pointer 2D.
- * @param isDisabled Kondisi blokir tombol (contohnya saat Auto-Spawn menyala).
- * @return true Apabila berhasil diklik.
+ * @param rect Ukuran dan posisi tombol kapal.
+ * @param type Teks kelompok tipe kapal besar (misal: GALLEON).
+ * @param variant Teks kecil subvarian kapal (misal: Red/Black).
+ * @param mousePos Posisi mouse.
+ * @param isDisabled Jika true, tombol menjadi mati (misal saat fitur Auto-Spawn nyala).
+ * @return true Jika tombol ditekan agar memunculkan kapal tersebut ke layar.
  */
 static bool DrawOceanShipButton(Rectangle rect, const char* type, const char* variant, Vector2 mousePos, bool isDisabled) {
     bool isHover = !isDisabled && CheckCollisionPointRec(mousePos, rect);
