@@ -411,20 +411,17 @@ void DrawBintang_Pola(float x, float y, float scale, Color c, bool isWire) {
         float starX = startX + fracX * areaW;
         float starY = startY + fracY * areaH; 
         
-        float size = (0.5f + fracSize * 1.5f) * scale * 0.7f;
+        float size = (0.5f + fracSize * 1.0f) * scale;
         float speed = 1.0f + fracSpeed * 3.0f;
         float offset = fracOffset * PI * 2.0f;
         
         float twinkle = 0.5f + 0.5f * sinf(previewTime * speed + offset);
-        Color starCol = isWire ? GREEN : (Color){255, 255, 255, (unsigned char)(255 * twinkle)};
+        Color starCol = isWire ? GREEN : (Color){255, 255, 255, (unsigned char)(255.0f * twinkle)};
         
         if (isWire) {
-            DrawCircleLinesV((Vector2){starX, starY}, size, starCol);
+            DrawCircleLinesV((Vector2){starX, starY}, size, GREEN);
         } else {
             DrawCircleV((Vector2){starX, starY}, size, starCol);
-            if (twinkle > 0.85f) { // Pendar tipis saat terang maksimal
-                DrawCircleV((Vector2){starX, starY}, size * 3.0f, (Color){255, 255, 255, (unsigned char)(40 * twinkle)});
-            }
         }
     }
     #undef IN_BOX

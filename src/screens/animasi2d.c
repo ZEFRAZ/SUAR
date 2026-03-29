@@ -160,9 +160,6 @@ void UpdateAnimasi2DScreen(Animasi2DScreen *s) {
         s->speedMult -= 0.5f; 
         if(s->speedMult < 0.5f) s->speedMult = 0.5f; // Kunci minimal di 0.5
     }
-    if (IsKeyPressed(KEY_R)) {
-        s->weather = (s->weather == WEATHER_CLEAR) ? WEATHER_STORM : WEATHER_CLEAR;
-    }
 
     previewTime = s->realTime;
     s->beamAngle = (PI - 0.6f) + sinf(s->realTime * 0.5f) * 0.6f;

@@ -3,9 +3,7 @@
  * @brief Inti arsitektur perenderan matriks transformasi grafis 2D (2D Graphic Transformation Matrix).
  * 
  * Pusat kendali dan rekayasa manipulasi vertex (Vertex Manipulation Engine) bagi ruang lingkup koordinat Raylib. 
- * Dilengkapi fungsi penjembatan algoritma interpolasi polinomial Bezier serta perenderan poligon *n-sided* 
- * (Transformasi Affine lokal-ke-global) yang dirancang secara ortogonal terhadap arsitektur Canvas API, 
- * memberdayakan pengguna selayaknya antarmuka deklaratif peramban web modern di atas *runtime* berbasis C.
+ * Dilengkapi fungsi penjembatan algoritma interpolasi polinomial Bezier
  */
 
 #include "draw_helpers.h"
@@ -14,7 +12,21 @@
 #include "midcircle.h"
 #include <math.h>
 
-void FillTrap(int xl_t, int xr_t, int yt,
+/**
+ * @brief Algoritma Pewarnaan Bidang Trapesium Berbasis Pemindaian Garis (Scan-Line Trapezoid Fill).
+ * 
+ * Melakukan pengisian rasterisasi pada bangun trapesium horizontal dengan melakukan iterasi dari batas
+ * atas (yt) ke batas bawah (yb). Menggunakan perhitungan rasio/interpolasi linear `s` untuk menemukan 
+ * titik ordinat (x) di kiri dan di kanan, lalu memanggil fungsi BresenhamLine untuk mengarsir setiap barisnya secara solid.
+ * 
+ * @param xl_t Koordinat X ujung kiri atas.
+ * @param xr_t Koordinat X ujung kanan atas.
+ * @param yt   Koordinat Y batas langit-langit (atas).
+ * @param xl_b Koordinat X ujung kiri bawah.
+ * @param xr_b Koordinat X ujung kanan bawah.
+ * @param yb   Koordinat Y batas lantai (bawah).
+ * @param c    Warna arsiran solid Trapesium.
+ */
               int xl_b, int xr_b, int yb, Color c) {
     if (yt > yb) {
         int t;
@@ -30,11 +42,30 @@ void FillTrap(int xl_t, int xr_t, int yt,
     }
 }
 
+/**
+ * @brief Algoritma Pewarnaan Persegi (Solid Rectangle Fill).
+ * 
+ * Mengeksekusi penarikan garis horizontal (sepanjang `w`) berulang kali kebawah sebanyak `h` baris
+ * menggunakan algoritma pewarnaan stabil DDALine.
+ * 
+ * @param x Posisi pojok kiri atas (X).
+ * @param y Posisi pojok kiri atas (Y).
+ * @param w Lebar (Width) dari persegi.
+ * @param h Tinggi (Height) vertikal ke bawah dari persegi.
+ * @param c Warna arsiran bidang persegi.
+ */
 void FillRect(int x, int y, int w, int h, Color c) {
     for (int row = y; row <= y + h; row++)
         DDALine(x, row, x + w, row, c);
 }
 
+/**
+ * @brief Rasterisasi Segitiga Solid Menggunakan Pembagian Trapesium (Standard Triangle Rasterization).
+ * 
+ * Membongkar bentukan Segitiga 3 Titik menjadi kombinasi dua bilah trapesium datar (Flat-Top & Flat-Bottom).
+ * Melakukan pengurutan koordinat vertikal (Y-Sort) dari puncak ke dasar, mengkalkulasi titik potong 
+ * garis tengah (Cut Point), dan mendistribusikan piksel pekat melalui `FillTrap`.
+ */
 void FillTri(int x1,int y1,int x2,int y2,int x3,int y3, Color c) {
     int t;
     if (y1>y2){t=x1;x1=x2;x2=t; t=y1;y1=y2;y2=t;}

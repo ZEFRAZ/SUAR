@@ -78,15 +78,14 @@ ScreenState UpdateDrawGuide(void) {
     DRAW_GUIDE("[ H ]", "- Sembunyikan / Tampilkan Panel UI (HUD)", 60);
     DRAW_GUIDE("[ SPACE ]", "- Play / Pause Animasi", 110);
     DRAW_GUIDE("[ W ]", "- Toggle Mode Wireframe (Garis Poligon)", 160);
-    DRAW_GUIDE("[ R ]", "- Ubah Cuaca secara Cepat (Cerah / Badai)", 210);
-    DRAW_GUIDE("[ UP / DOWN ]", "- Tambah / Kurangi Kecepatan Global", 260);
-    DRAW_GUIDE("[ BACKSPACE ]", "- Kembali ke Menu Utama (Berlaku di semua layar)", 310);
+    DRAW_GUIDE("[ UP / DOWN ]", "- Tambah / Kurangi Kecepatan Global", 210);
+    DRAW_GUIDE("[ BACKSPACE ]", "- Kembali ke Menu Utama (Berlaku di semua layar)", 260);
 
-    DrawTextEx(guideFont, "--- INTERAKSI MOUSE ---", (Vector2){ cx, cy + 370.0f }, 30.0f, 1.5f, (Color){ 30, 255, 150, 255 });
-    DRAW_GUIDE("Klik Kiri (Langit)", "- Membuat Rasi Bintang Kustom (Malam Hari)", 430);
-    DRAW_GUIDE("Klik Kanan", "- Mereset / Menghapus Rasi Bintang", 480);
-    DRAW_GUIDE("UI Armada", "- Gunakan Tab Armada untuk memunculkan kapal", 530);
-    DRAW_GUIDE("UI Kontrol", "- Atur Waktu, Ombak, dan Cuaca dari panel kiri", 580);
+    DrawTextEx(guideFont, "--- INTERAKSI MOUSE ---", (Vector2){ cx, cy + 320.0f }, 30.0f, 1.5f, (Color){ 30, 255, 150, 255 });
+    DRAW_GUIDE("Klik Kiri (Langit)", "- Membuat Rasi Bintang Kustom (Malam Hari)", 380);
+    DRAW_GUIDE("Klik Kanan", "- Mereset / Menghapus Rasi Bintang", 430);
+    DRAW_GUIDE("UI Armada", "- Gunakan Tab Armada untuk memunculkan kapal", 480);
+    DRAW_GUIDE("UI Kontrol", "- Atur Waktu, Ombak, dan Cuaca dari panel kiri", 530);
 
     EndMode2D();
 

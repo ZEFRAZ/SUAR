@@ -141,15 +141,15 @@ ScreenState UpdateDrawPola2D(void) {
     const char* title = "";
 
     switch(currentItemIndex) {
-        case 0: title = "KAPAL KARGO RAKSASA"; DrawShip_Cargo(cx, cy + 100.0f, baseShipScale, angle, (Color){80,60,40,255}, (Color){200,200,200,255}, showWireframe); break;
-        case 1: title = "KAPAL PESIAR MEWAH"; DrawShip_Cruise(cx, cy + 200.0f, baseShipScale * 1.5f, angle, WHITE, LIGHTGRAY, showWireframe); break;
-        case 2: title = "KAPAL MILITER PERANG"; DrawShip_Military(cx, cy + 100.0f, baseShipScale * 2.0f, angle, GRAY, DARKGRAY, showWireframe); break;
-        case 3: title = "KAPAL RISET ILMIAH"; DrawShip_Research(cx, cy + 150.0f, baseShipScale * 2.0f, angle, RED, WHITE, showWireframe); break;
-        case 4: title = "KAPAL YACHT PRIBADI"; DrawShip_Yacht(cx, cy + 100.0f, baseShipScale, angle, WHITE, LIGHTGRAY, showWireframe); break;
-        case 5: title = "KAPAL BAJAK LAUT"; DrawShip_Pirate_Variant(cx, cy + 50.0f, baseShipScale * 1.3f, angle, flap, currentPirateVariant, showWireframe); break;
-        case 6: title = "KAPAL LAYAR GALLEON"; DrawShip_Galleon(cx, cy + 100.0f, baseShipScale * 1.3f, angle, flap, currentGalleonVariant, showWireframe); break;
-        case 7: title = "PERAHU NELAYAN"; DrawShip_Fishing(cx, cy, baseShipScale * 1.5f, angle, (Color){80,60,40,255}, ORANGE, showWireframe); break;
-        case 8: title = "KAPAL SLOOP KECIL"; DrawShip_Sloop_Variant(cx, cy + 60.0f, baseShipScale * 0.9f, angle, flap, currentSloopVariant, showWireframe); break;
+        case 0: title = "GIANT CARGO SHIP"; DrawShip_Cargo(cx, cy + 100.0f, baseShipScale, angle, (Color){80,60,40,255}, (Color){200,200,200,255}, showWireframe); break;
+        case 1: title = "LUXURY CRUISE SHIP"; DrawShip_Cruise(cx, cy + 200.0f, baseShipScale * 1.5f, angle, WHITE, LIGHTGRAY, showWireframe); break;
+        case 2: title = "MILITARY WARSHIP"; DrawShip_Military(cx, cy + 100.0f, baseShipScale * 2.0f, angle, GRAY, DARKGRAY, showWireframe); break;
+        case 3: title = "SCIENTIFIC RESEARCH SHIP"; DrawShip_Research(cx, cy + 150.0f, baseShipScale * 2.0f, angle, RED, WHITE, showWireframe); break;
+        case 4: title = "PRIVATE LUXURY YACHT"; DrawShip_Yacht(cx, cy + 100.0f, baseShipScale, angle, WHITE, LIGHTGRAY, showWireframe); break;
+        case 5: title = "CORSAIR PIRATE SHIP"; DrawShip_Pirate_Variant(cx, cy + 50.0f, baseShipScale * 1.3f, angle, flap, currentPirateVariant, showWireframe); break;
+        case 6: title = "SPANISH GALLEON SHIP"; DrawShip_Galleon(cx, cy + 100.0f, baseShipScale * 1.3f, angle, flap, currentGalleonVariant, showWireframe); break;
+        case 7: title = "FISHING BOAT"; DrawShip_Fishing(cx, cy, baseShipScale * 1.5f, angle, (Color){80,60,40,255}, ORANGE, showWireframe); break;
+        case 8: title = "LIGHT SLOOP SHIP"; DrawShip_Sloop_Variant(cx, cy + 60.0f, baseShipScale * 0.9f, angle, flap, currentSloopVariant, showWireframe); break;
         case 9: 
             title = (currentLighthouseVariant == 0) ? "MERCUSUAR (MALAM/NYALA)" : "MERCUSUAR (PAGI/MATI)";
             DrawMercusuar_Pola(cx, cy + 100.0f, baseShipScale * 0.8f, currentLighthouseVariant, showWireframe); 
@@ -225,13 +225,13 @@ ScreenState UpdateDrawPola2D(void) {
 
     // Menampilkan panel ganti warna dan cuaca hanya pada obyek tertentu
     if (currentItemIndex == 8 || currentItemIndex == 5 || currentItemIndex == 6 || currentItemIndex == 18 || currentItemIndex == 9) {
-        const char* varNames[3] = {"1: KLASIK", "2: GALIUNG", "3: TIMUR"};
+        const char* varNames[3] = {"1: BOMB PIRATE", "2: OBSIDIAN", "3: CRIMSON BLOOD"};
         int numVars = 3;
         
         if (currentItemIndex == 8) {
-            varNames[0] = "1: KLASIK"; varNames[1] = "2: CYAN"; varNames[2] = "3: KUNING";
+            varNames[0] = "1: CLASSIC"; varNames[1] = "2: RED TRIM"; varNames[2] = "3: GOLD HULL";
         } else if (currentItemIndex == 6) {
-            varNames[0] = "1: BARAT"; varNames[1] = "2: TIMUR";
+            varNames[0] = "1: WESTERN"; varNames[1] = "2: EASTERN";
             numVars = 2;
         } else if (currentItemIndex == 18) { 
             varNames[0] = "HUJAN DERAS"; varNames[1] = "BADAI PETIR";
