@@ -34,12 +34,12 @@ void BresenhamLine(int x1, int y1, int x2, int y2, Color color) {
         // Memprediksi galat pada iterasi berikutnya untuk iterasi sub-sumbu
         int e2 = 2 * err;
         if (e2 > -dy) { 
-            err -= dy; 
-            x1 += sx; 
+            err -= dy;
+            x1 += sx;
         }
         if (e2 < dx) { 
-            err += dx; 
-            y1 += sy; 
+            err += dx;
+            y1 += sy;
         }
     }
 }

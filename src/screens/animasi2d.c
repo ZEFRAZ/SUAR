@@ -132,7 +132,7 @@ void InitAnimasi2DScreen(Animasi2DScreen *s) {
         s->ships[i].active = false;
     }
 
-    SetPolaAlgorithm(false); 
+    SetPolaAlgorithm(true); 
 }
 
 // ============================================================================

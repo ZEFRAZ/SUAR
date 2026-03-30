@@ -1,11 +1,9 @@
 // =============================================================================
 //  alam.c — Objek Alam & Cuaca
-//  Proyek   : Mercusuar (Komputer Grafis – Semester 4)
 //  Deskripsi: Kumpulan fungsi penggambaran elemen lingkungan:
 //             Awan, Burung, Gunung, Tebing, Matahari/Bulan, Bintang,
 //             Kabut, Ombak, Hujan/Badai, Rasi Bintang.
-//  Catatan  : Semua fungsi mendukung mode Solid (isWire=false) dan
-//             mode Wireframe (isWire=true, warna selalu GREEN).
+//  Catatan  : Semua fungsi mendukung mode Solid (isWire=false) dan Mode Wireframe (isWire=true, warna selalu GREEN).
 // =============================================================================
 
 #include "alam.h"
@@ -20,7 +18,7 @@ extern Font  polaFont;    // Font untuk teks debug (mode Wireframe)
 extern float previewTime; // Waktu animasi global (detik)
 
 /**
- * @brief Merender formasi awan prosedural menggunakan interpolasi polynomial derajat tiga (Cubic Bezier Curve).
+ * @brief Merender formasi awan.
  * 
  * Melakukan kalkulasi parametrik atas 4 titik kontrol (P0 sebagai jangkar awal, P1/P2 pelengkung, P3 jangkar akhir).
  * Algoritma Bezier diaplikasikan secara berurutan untuk membentuk struktur kumulus berlapis.
@@ -36,7 +34,7 @@ extern float previewTime; // Waktu animasi global (detik)
 void DrawAwan_Pola(int type, float x, float y, float scale, Color c, bool isWire) {
     Color outLine = isWire ? GREEN : BLANK;
 
-    // Makro Evaluasi Polinomial Bezier Kubik (Cubic Bezier Evaluation Macro)
+    // Makro Evaluasi Polinomial Bezier Kubik
     #define ADD_CUBIC(arr, idx, px0, py0, px1, py1, px2, py2, px3, py3) \
         for(int _i=1; _i<=12; _i++) { \
             float _t = _i/12.0f; float _inv = 1.0f - _t; \

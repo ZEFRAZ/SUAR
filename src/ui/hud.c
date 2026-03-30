@@ -17,11 +17,7 @@ static bool isHudFontLoaded = false;
 
 /**
  * @brief Fungsi penulisan teks pada layar dengan font khusus.
- * 
- * Fungsi ini otomatis mendeteksi apakah font kustom sudah berhasil dimuat (load).
- * Jika ya, maka API `DrawTextEx` akan dipanggil. Jika gagal, akan memakai
- * font bawaan raylib `DrawText`.
- * 
+ *
  * @param text Teks yang mau dicetak.
  * @param x Posisi X di layar.
  * @param y Posisi Y di layar.

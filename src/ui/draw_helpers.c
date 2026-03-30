@@ -92,7 +92,7 @@ void FillTri(int x1,int y1,int x2,int y2,int x3,int y3, Color c) {
 // =============================================================================
 // MODUL MATEMATIKA TRANSFORMATIF DAN TRIANGULASI (TRANSFORMATIVE GEOMETRY MODULE)
 // =============================================================================
-static bool g_useBresenhamAlgo = false;
+static bool g_useBresenhamAlgo = true;
 
 /**
  * @brief Menset algoritma pembuatan garis yang aktif.
@@ -299,7 +299,6 @@ void DrawClippedBeamTriangle(Vector2 p0, Vector2 p1, Vector2 p2, float minX, flo
     poly[0] = p0; poly[1] = p1; poly[2] = p2;
     Vector2 temp[10]; int tempCount;
     
-    // Kliping Sutherland-Hodgman
     tempCount = 0;
     for (int i=0; i<polyCount; i++) { Vector2 curr = poly[i]; Vector2 prev = poly[(i - 1 + polyCount) % polyCount]; bool currIn = curr.x >= minX; bool prevIn = prev.x >= minX; if (currIn != prevIn) temp[tempCount++] = (Vector2){ minX, prev.y + (minX - prev.x) / (curr.x - prev.x) * (curr.y - prev.y) }; if (currIn) temp[tempCount++] = curr; }
     polyCount = tempCount; for(int i=0;i<polyCount;i++) poly[i]=temp[i];

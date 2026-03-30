@@ -87,48 +87,61 @@ void MidcircleFilled(int centerX, int centerY, int radius, Color color) {
 }
 
 /**
- * @brief Pengimplementasian formal persamaan elips matematis dalam ruang metrik piksel
- *        melalui instrumen ganda Parameter Keputusan (Dual Decision Parameters).
+ * @brief Algoritma Midpoint Ellipse (Integer-Only).
+ * 
+ * Menggambar kelengkungan elips murni menggunakan angka bulat (integer) sesuai metode dosen.
+ * Terbagi menjadi Region 1 (saat slope < 1) dan Region 2 (slope >= 1).
+ * Mengalikan rumus asli dengan 4 untuk menghilangkan pecahan desimal.
+ * 
+ * @param center_x, center_y Titik pusat elips.
+ * @param rx Jari-jari mendatar.
+ * @param ry Jari-jari tegak.
+ * @param color Skema warna pixel di layar.
  */
 void MidpointEllipse(int center_x, int center_y, int rx, int ry, Color color) {
-    long long rxSq = (long long)rx * rx;
-    long long rySq = (long long)ry * ry;
-    long long x = 0, y = ry, px = 0, py = 2 * rxSq * y;
+    if (rx == 0 || ry == 0) return;
 
-    // Wilayah 1 (Region 1): Kelengkungan landai, prioritas peningkatan pada absis X
-    long long p1 = rySq - (rxSq * ry) + (0.25f * rxSq);
-    while (px < py) {
+    long long rx2 = (long long)rx * rx;
+    long long ry2 = (long long)ry * ry;
+
+    int x = 0;
+    int y = ry;
+
+    // Region 1: |slope| < 1, iterasi berdasarkan sumbu X
+    // Dikalikan 4 untuk menghindari pecahan 0.25 (p1 = 4*ry2 - 4*rx2*ry + rx2)
+    long long p1 = 4 * ry2 - 4 * rx2 * ry + rx2;
+
+    while (ry2 * x < rx2 * y) {
         DrawPixel(center_x + x, center_y + y, color);
         DrawPixel(center_x - x, center_y + y, color);
         DrawPixel(center_x + x, center_y - y, color);
         DrawPixel(center_x - x, center_y - y, color);
+
         x++;
-        px = px + 2 * rySq;
         if (p1 < 0) {
-            p1 = p1 + rySq + px;
+            p1 += 4 * ry2 * (2 * x + 3);
         } else {
             y--;
-            py = py - 2 * rxSq;
-            p1 = p1 + rySq + px - py;
+            p1 += 4 * ry2 * (2 * x + 3) - 4 * rx2 * (2 * y + 2);
         }
     }
 
-    // Wilayah 2 (Region 2): Kelengkungan curam, perpindahan absis lebih cepat dari absis X hingga menyentuh titik singgung bawah
-    long long p2 = (rySq) * ((x + 0.5f) * (x + 0.5f)) +
-                   (rxSq) * ((y - 1) * (y - 1)) - (rxSq * rySq);
+    // Region 2: |slope| >= 1, iterasi berdasarkan sumbu Y
+    // Dikalikan 4 untuk menghindari pecahan 0.5 di formula asli
+    long long p2 = ry2 * (2 * x + 1) * (2 * x + 1) + 4 * rx2 * (y - 1) * (y - 1) - 4 * rx2 * ry2;
+
     while (y >= 0) {
         DrawPixel(center_x + x, center_y + y, color);
         DrawPixel(center_x - x, center_y + y, color);
         DrawPixel(center_x + x, center_y - y, color);
         DrawPixel(center_x - x, center_y - y, color);
+
         y--;
-        py = py - 2 * rxSq;
         if (p2 > 0) {
-            p2 = p2 + rxSq - py;
+            p2 += 4 * rx2 * (-2 * y + 3);
         } else {
             x++;
-            px = px + 2 * rySq;
-            p2 = p2 + rxSq - py + px;
+            p2 += 4 * ry2 * (2 * x + 2) + 4 * rx2 * (-2 * y + 3);
         }
     }
 }
