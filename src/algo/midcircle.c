@@ -89,7 +89,7 @@ void MidcircleFilled(int centerX, int centerY, int radius, Color color) {
 /**
  * @brief Algoritma Midpoint Ellipse (Integer-Only).
  * 
- * Menggambar kelengkungan elips murni menggunakan angka bulat (integer) sesuai metode dosen.
+ * Menggambar kelengkungan elips murni menggunakan angka bulat (integer).
  * Terbagi menjadi Region 1 (saat slope < 1) dan Region 2 (slope >= 1).
  * Mengalikan rumus asli dengan 4 untuk menghilangkan pecahan desimal.
  * 
