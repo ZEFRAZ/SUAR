@@ -13,6 +13,18 @@
 #include <math.h>
 
 /**
+ * @brief Penggambar garis mendatar super cepat (Fast Horizontal Line).
+ * Karena FillTri dan FillRect menggambar murni secara horizontal (kiri ke kanan), 
+ * algoritma Bresenham/DDA umum terlalu lambat/berat karena melewati banyak rumus if-else.
+ */
+static inline void HLine(int x1, int x2, int y, Color c) {
+    if (x1 > x2) { int t = x1; x1 = x2; x2 = t; }
+    for (int x = x1; x <= x2; x++) {
+        DrawPixel(x, y, c);
+    }
+}
+
+/**
  * @brief Fungsi untuk mengisi warna bidang Trapesium (Fill).
  * 
  * Menggambar tumpukan garis horizontal (Scan-Line) dari atas (yt) sampai bawah (yb).
@@ -37,8 +49,7 @@ void FillTrap(int xl_t, int xr_t, int yt, int xl_b, int xr_b, int yb, Color c) {
         float s = (float)(y - yt) / h;
         int xl = xl_t + (int)(s * (xl_b - xl_t));
         int xr = xr_t + (int)(s * (xr_b - xr_t));
-        if (xl > xr) { int t = xl; xl = xr; xr = t; }
-        BresenhamLine(xl, y, xr, y, c);
+        HLine(xl, xr, y, c);
     }
 }
 
@@ -56,7 +67,7 @@ void FillTrap(int xl_t, int xr_t, int yt, int xl_b, int xr_b, int yb, Color c) {
  */
 void FillRect(int x, int y, int w, int h, Color c) {
     for (int row = y; row <= y + h; row++)
-        DDALine(x, row, x + w, row, c);
+        HLine(x, x + w, row, c);
 }
 
 /**
@@ -84,8 +95,7 @@ void FillTri(int x1,int y1,int x2,int y2,int x3,int y3, Color c) {
         float b = (float)(y-(second?y2:y1))/sh;
         int xa = x1+(int)(a*(x3-x1));
         int xb = second ? x2+(int)(b*(x3-x2)) : x1+(int)(b*(x2-x1));
-        if (xa>xb){t=xa;xa=xb;xb=t;}
-        BresenhamLine(xa, y, xb, y, c);
+        HLine(xa, xb, y, c);
     }
 }
 
