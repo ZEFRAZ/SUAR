@@ -157,8 +157,9 @@ void DrawCustomPoly(Vector2* localPts, int count, float tx, float ty, float scal
     }
     if (!isWire && count >= 3 && fill.a > 0) {
         for (int i = 1; i < count - 1; i++) {
-            DrawTriangle(worldPts[0], worldPts[i], worldPts[i+1], fill);
-            DrawTriangle(worldPts[0], worldPts[i+1], worldPts[i], fill); 
+            FillTri((int)worldPts[0].x, (int)worldPts[0].y, 
+                    (int)worldPts[i].x, (int)worldPts[i].y, 
+                    (int)worldPts[i+1].x, (int)worldPts[i+1].y, fill);
         }
     }
     if (outline.a > 0) {
@@ -202,8 +203,7 @@ void DrawCustomBezier(Vector2 p0, Vector2 p1, Vector2 p2, float tx, float ty, fl
         Vector2 current = (Vector2){px, py};
 
         if (!isWire && fill.a > 0) {
-            DrawTriangle(t0, prev, current, fill);
-            DrawTriangle(t0, current, prev, fill);
+            FillTri((int)t0.x, (int)t0.y, (int)prev.x, (int)prev.y, (int)current.x, (int)current.y, fill);
         }
         AlgoLine((int)prev.x, (int)prev.y, (int)current.x, (int)current.y, outline);
         prev = current;
@@ -233,8 +233,8 @@ void DrawCustomCircle(Vector2 center, float radius, float tx, float ty, float sc
     float strokeR = r + (2.5f * scale); 
 
     if (!isWire) {
-        if (outline.a > 0) DrawCircleV(c, strokeR, outline);
-        if (fill.a > 0) DrawCircleV(c, r, fill);
+        if (outline.a > 0) MidcircleFilled((int)c.x, (int)c.y, (int)strokeR, outline);
+        if (fill.a > 0) MidcircleFilled((int)c.x, (int)c.y, (int)r, fill);
     } else {
         if (outline.a > 0) Midcircle((int)c.x, (int)c.y, (int)strokeR, GREEN);
         if (fill.a > 0) Midcircle((int)c.x, (int)c.y, (int)r, GREEN);
@@ -259,8 +259,8 @@ void DrawCustomRing(Vector2 center, float radius, float thickness, float tx, flo
         Vector2 currIn = {c.x + cosf(t) * (r - th/2.0f), c.y + sinf(t) * (r - th/2.0f)};
         Vector2 currOut = {c.x + cosf(t) * (r + th/2.0f), c.y + sinf(t) * (r + th/2.0f)};
         if (!isWire) {
-            DrawTriangle(prevOut, prevIn, currIn, color);
-            DrawTriangle(prevOut, currIn, currOut, color);
+            FillTri((int)prevOut.x, (int)prevOut.y, (int)prevIn.x, (int)prevIn.y, (int)currIn.x, (int)currIn.y, color);
+            FillTri((int)prevOut.x, (int)prevOut.y, (int)currIn.x, (int)currIn.y, (int)currOut.x, (int)currOut.y, color);
         } else {
             AlgoLine((int)prevIn.x, (int)prevIn.y, (int)currIn.x, (int)currIn.y, GREEN);
             AlgoLine((int)prevOut.x, (int)prevOut.y, (int)currOut.x, (int)currOut.y, GREEN);
