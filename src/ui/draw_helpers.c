@@ -13,18 +13,6 @@
 #include <math.h>
 
 /**
- * @brief Penggambar garis mendatar super cepat (Fast Horizontal Line).
- * Karena FillTri dan FillRect menggambar murni secara horizontal (kiri ke kanan), 
- * algoritma Bresenham/DDA umum terlalu lambat/berat karena melewati banyak rumus if-else.
- */
-static inline void HLine(int x1, int x2, int y, Color c) {
-    if (x1 > x2) { int t = x1; x1 = x2; x2 = t; }
-    for (int x = x1; x <= x2; x++) {
-        DrawPixel(x, y, c);
-    }
-}
-
-/**
  * @brief Fungsi untuk mengisi warna bidang Trapesium (Fill).
  * 
  * Menggambar tumpukan garis horizontal (Scan-Line) dari atas (yt) sampai bawah (yb).
@@ -49,7 +37,8 @@ void FillTrap(int xl_t, int xr_t, int yt, int xl_b, int xr_b, int yb, Color c) {
         float s = (float)(y - yt) / h;
         int xl = xl_t + (int)(s * (xl_b - xl_t));
         int xr = xr_t + (int)(s * (xr_b - xr_t));
-        HLine(xl, xr, y, c);
+        if (xl > xr) { int t = xl; xl = xr; xr = t; }
+        AlgoLine(xl, y, xr, y, c);
     }
 }
 
@@ -67,7 +56,7 @@ void FillTrap(int xl_t, int xr_t, int yt, int xl_b, int xr_b, int yb, Color c) {
  */
 void FillRect(int x, int y, int w, int h, Color c) {
     for (int row = y; row <= y + h; row++)
-        HLine(x, x + w, row, c);
+        AlgoLine(x, row, x + w, row, c);
 }
 
 /**
@@ -95,7 +84,8 @@ void FillTri(int x1,int y1,int x2,int y2,int x3,int y3, Color c) {
         float b = (float)(y-(second?y2:y1))/sh;
         int xa = x1+(int)(a*(x3-x1));
         int xb = second ? x2+(int)(b*(x3-x2)) : x1+(int)(b*(x2-x1));
-        HLine(xa, xb, y, c);
+        if (xa>xb){t=xa;xa=xb;xb=t;}
+        AlgoLine(xa, y, xb, y, c);
     }
 }
 
@@ -167,9 +157,8 @@ void DrawCustomPoly(Vector2* localPts, int count, float tx, float ty, float scal
     }
     if (!isWire && count >= 3 && fill.a > 0) {
         for (int i = 1; i < count - 1; i++) {
-            FillTri((int)worldPts[0].x, (int)worldPts[0].y, 
-                    (int)worldPts[i].x, (int)worldPts[i].y, 
-                    (int)worldPts[i+1].x, (int)worldPts[i+1].y, fill);
+            DrawTriangle(worldPts[0], worldPts[i], worldPts[i+1], fill);
+            DrawTriangle(worldPts[0], worldPts[i+1], worldPts[i], fill); 
         }
     }
     if (outline.a > 0) {
@@ -213,7 +202,8 @@ void DrawCustomBezier(Vector2 p0, Vector2 p1, Vector2 p2, float tx, float ty, fl
         Vector2 current = (Vector2){px, py};
 
         if (!isWire && fill.a > 0) {
-            FillTri((int)t0.x, (int)t0.y, (int)prev.x, (int)prev.y, (int)current.x, (int)current.y, fill);
+            DrawTriangle(t0, prev, current, fill);
+            DrawTriangle(t0, current, prev, fill);
         }
         AlgoLine((int)prev.x, (int)prev.y, (int)current.x, (int)current.y, outline);
         prev = current;
@@ -243,8 +233,8 @@ void DrawCustomCircle(Vector2 center, float radius, float tx, float ty, float sc
     float strokeR = r + (2.5f * scale); 
 
     if (!isWire) {
-        if (outline.a > 0) MidcircleFilled((int)c.x, (int)c.y, (int)strokeR, outline);
-        if (fill.a > 0) MidcircleFilled((int)c.x, (int)c.y, (int)r, fill);
+        if (outline.a > 0) DrawCircleV(c, strokeR, outline);
+        if (fill.a > 0) DrawCircleV(c, r, fill);
     } else {
         if (outline.a > 0) Midcircle((int)c.x, (int)c.y, (int)strokeR, GREEN);
         if (fill.a > 0) Midcircle((int)c.x, (int)c.y, (int)r, GREEN);
@@ -269,8 +259,8 @@ void DrawCustomRing(Vector2 center, float radius, float thickness, float tx, flo
         Vector2 currIn = {c.x + cosf(t) * (r - th/2.0f), c.y + sinf(t) * (r - th/2.0f)};
         Vector2 currOut = {c.x + cosf(t) * (r + th/2.0f), c.y + sinf(t) * (r + th/2.0f)};
         if (!isWire) {
-            FillTri((int)prevOut.x, (int)prevOut.y, (int)prevIn.x, (int)prevIn.y, (int)currIn.x, (int)currIn.y, color);
-            FillTri((int)prevOut.x, (int)prevOut.y, (int)currIn.x, (int)currIn.y, (int)currOut.x, (int)currOut.y, color);
+            DrawTriangle(prevOut, prevIn, currIn, color);
+            DrawTriangle(prevOut, currIn, currOut, color);
         } else {
             AlgoLine((int)prevIn.x, (int)prevIn.y, (int)currIn.x, (int)currIn.y, GREEN);
             AlgoLine((int)prevOut.x, (int)prevOut.y, (int)currOut.x, (int)currOut.y, GREEN);
