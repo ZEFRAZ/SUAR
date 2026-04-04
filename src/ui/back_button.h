@@ -3,16 +3,22 @@
 
 /**
  * @file back_button.h
- * @brief Deklarasi antarmuka komponen navigasi layar tunggal.
- * 
- * Melingkupi pengawasan *input handler* kembali ke layar beranda (Return to Menu)
- * dan proyeksi visual *button* interaktif dengan animasi suspensi dinamika fluida (Hover Effect).
+ * @brief Deklarasi fungsi tombol navigasi "Kembali".
+ *
+ * Modul ini menyediakan tombol Kembali yang muncul di pojok kiri atas layar
+ * pada setiap layar selain menu utama. Mendukung klik mouse dan tombol ESC/Backspace.
  */
 
-/** @brief Memindai pemicu interaksi pointer (*Click*) maupun papan tik (ESC/Backspace). */
-int  BackButtonPressed(void);
+/**
+ * @brief Mengecek apakah tombol Kembali ditekan (klik mouse atau ESC/Backspace).
+ *
+ * @return 1 jika tombol ditekan, 0 jika tidak.
+ */
+int BackButtonPressed(void);
 
-/** @brief Menghasilkan rendering tumpukan poligon matriks navigasi tombol "Kembali". */
+/**
+ * @brief Menggambar tombol Kembali di pojok kiri atas layar dengan efek hover.
+ */
 void DrawBackButton(void);
 
 #endif

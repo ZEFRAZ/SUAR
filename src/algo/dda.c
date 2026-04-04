@@ -3,88 +3,94 @@
 #include <stdlib.h>
 
 /**
- * @brief Algoritma Pembentuk Garis DDA (Digital Differential Analyzer).
- * 
- * Menggambar garis lurus di layar dari titik (x1, y1) ke (x2, y2).
- * Cara kerjanya: mencari sumbu pencapaian terjauh (X atau Y) dan menjadikannya patokan jumlah langkah.
- * Pada tiap langkah, titik koordinatnya akan ditambah perlahan (pakai pecahan float) lalu 
- * dibulatkan (round) ke koordinat piksel terdekat di layar.
- * 
- * @param x1, y1 Koordinat awal.
- * @param x2, y2 Koordinat akhir sasaran.
- * @param color Skema warna pixel di layar.
+ * @brief Menggambar garis lurus menggunakan Algoritma DDA (Digital Differential Analyzer).
+ *
+ * Cara kerja: algoritma menghitung selisih X dan Y, lalu menentukan sumbu mana yang
+ * memiliki jangkauan terpanjang. Sumbu terpanjang itulah yang menjadi jumlah langkah.
+ * Di setiap langkah, posisi piksel digeser secara bertahap menggunakan nilai pecahan,
+ * lalu dibulatkan ke koordinat piksel terdekat.
+ *
+ * @param x1 Koordinat X titik awal.
+ * @param y1 Koordinat Y titik awal.
+ * @param x2 Koordinat X titik akhir.
+ * @param y2 Koordinat Y titik akhir.
+ * @param color Warna garis yang akan digambar.
  */
 void DDALine(int x1, int y1, int x2, int y2, Color color) {
-    int dx = x2 - x1, dy = y2 - y1;
-    
-    // Menghitung langkah maksimum yang diperlukan
+    int dx = x2 - x1;
+    int dy = y2 - y1;
+
+    // Jumlah langkah diambil dari jarak terpanjang antar sumbu
     int steps = (abs(dx) > abs(dy)) ? abs(dx) : abs(dy);
-    
-    // Penanganan kasus di mana titik awal dan akhir berada pada koordinat yang sama
-    if (steps == 0) { 
-        DrawPixel(x1, y1, color); 
-        return; 
+
+    // Jika titik awal dan akhir sama, cukup gambar satu piksel
+    if (steps == 0) {
+        DrawPixel(x1, y1, color);
+        return;
     }
-    
-    // Menghitung rasio penambahan untuk masing-masing sumbu
+
+    // Hitung penambahan posisi di setiap langkah
     float xInc = (float)dx / steps;
     float yInc = (float)dy / steps;
-    float x = (float)x1, y = (float)y1;
-    
-    // Melakukan iterasi sebanyak langkah yang telah dikalkulasi
+    float x    = (float)x1;
+    float y    = (float)y1;
+
+    // Gambar piksel di setiap langkah sambil menggeser posisi secara bertahap
     for (int i = 0; i <= steps; i++) {
-        // Pembulatan koordinat real ke integer terdekat untuk dirender ke dalam piksel
         DrawPixel((int)roundf(x), (int)roundf(y), color);
-        x += xInc; 
+        x += xInc;
         y += yInc;
     }
 }
 
 /**
- * @brief Fungsi penggambar Garis Putus-Putus (Dashed Line) berbasis DDA.
- * 
- * Mirip kegunaannya dengan DDA biasa, namun ia bisa bolak-balik antara status 
- * "menggambar" (sepanjang dashLen) dan status "bolong/hilang" (sepanjang gapLen)
- * sehingga tercetaklah garis putus-putus. Dipakai saat menggambar rasi bintang (di alam.c).
- * 
- * @param x1, y1 Titik permulaan.
- * @param x2, y2 Titik akhir target.
- * @param dashLen Jatah panjang yang akan diwarnai penuh.
- * @param gapLen Jatah panjang lompatan di mana garis tak digambar.
- * @param color Warna cetak piksel.
+ * @brief Menggambar garis putus-putus menggunakan Algoritma DDA.
+ *
+ * Cara kerja sama dengan DDA biasa, namun setiap beberapa langkah, proses
+ * menggambar dihentikan sementara (membuat celah). Hasilnya adalah pola
+ * garis-celah-garis-celah yang bisa diatur panjangnya.
+ * Digunakan untuk menggambar garis rasi bintang di malam hari.
+ *
+ * @param x1      Koordinat X titik awal.
+ * @param y1      Koordinat Y titik awal.
+ * @param x2      Koordinat X titik akhir.
+ * @param y2      Koordinat Y titik akhir.
+ * @param dashLen Panjang segmen garis yang diwarnai.
+ * @param gapLen  Panjang celah kosong di antara segmen.
+ * @param color   Warna garis yang akan digambar.
  */
 void DDA_DashedLine(int x1, int y1, int x2, int y2, int dashLen, int gapLen, Color color) {
-    int dx = x2 - x1, dy = y2 - y1;
+    int dx    = x2 - x1;
+    int dy    = y2 - y1;
     int steps = (abs(dx) > abs(dy)) ? abs(dx) : abs(dy);
-    
-    if (steps == 0) { 
-        DrawPixel(x1, y1, color); 
-        return; 
+
+    if (steps == 0) {
+        DrawPixel(x1, y1, color);
+        return;
     }
-    
+
     float xInc = (float)dx / steps;
     float yInc = (float)dy / steps;
-    float x = (float)x1, y = (float)y1;
-    
-    int counter = 0;
-    int drawing = 1; // Flag penanda state saat ini: 1 untuk menggambar, 0 untuk melompati
-    int current_limit = dashLen;
+    float x    = (float)x1;
+    float y    = (float)y1;
 
-    // Iterasi sepanjang garis trajektori DDA
+    int counter       = 0;
+    int sedangGambar  = 1; // 1 = sedang menggambar, 0 = sedang melewati celah
+    int batas_sekarang = dashLen;
+
     for (int i = 0; i <= steps; i++) {
-        if (drawing) {
+        if (sedangGambar) {
             DrawPixel((int)roundf(x), (int)roundf(y), color);
         }
-        x += xInc; 
+        x += xInc;
         y += yInc;
-        
         counter++;
-        
-        // Memeriksa pencapaian batas panjang segmen saat ini
-        if (counter >= current_limit) {
-            counter = 0;
-            drawing = !drawing; // Pembalikan logika state
-            current_limit = drawing ? dashLen : gapLen;
+
+        // Ganti status (gambar/celah) jika sudah mencapai batas segmen saat ini
+        if (counter >= batas_sekarang) {
+            counter        = 0;
+            sedangGambar   = !sedangGambar;
+            batas_sekarang = sedangGambar ? dashLen : gapLen;
         }
     }
 }

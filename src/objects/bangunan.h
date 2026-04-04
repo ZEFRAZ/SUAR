@@ -6,25 +6,24 @@
 
 /**
  * @file bangunan.h
- * @brief Deklarasi entitas arsitektur buatan (Man-made Architecture).
- * 
- * Modul ini mengekspos fungsi-fungsi yang bertanggung jawab merender objek bangunan solid
- * dengan geometri kompleks yang melibatkan operasi tumpukan poligon (Polygon Overlay)
- * dan komputasi proyeksi pencahayaan relasional (Relational Lighting Projection).
+ * @brief Deklarasi fungsi penggambaran objek bangunan: Mercusuar.
+ *
+ * Modul ini menyediakan fungsi untuk menggambar mercusuar secara lengkap,
+ * termasuk fondasi, badan menara, balkon, atap, dan efek cahaya sorot.
  */
 
 /**
- * @brief Menggambar bangunan Mercusuar secara utuh beserta lampunya.
- * 
- * Melakukan perenderan tumpukan lapisan (layering) dimulai dari pondasi bawah bersudut tumpul
- * hingga ruang kaca lampu di elevasi tertinggi.
- * 
- * @param x Koordinat dasar absis (Tengah).
- * @param y Koordinat dasar ordinat (Tengah).
- * @param scale Skalar pengali seragam (Uniform Scaling Factor).
- * @param variant Pengondisian sakelar visibilitas lampu (0 = Menyala, 1 = Padam).
- * @param isWireframe Penentu mode inspeksi kerangka (True = Hijau).
+ * @brief Menggambar bangunan Mercusuar secara utuh beserta efek lampunya.
+ *
+ * Objek digambar lapis demi lapis dari bawah ke atas. Saat lampu menyala
+ * (variant = 0), efek sorot cahaya yang berputar akan ditampilkan.
+ *
+ * @param x       Koordinat X pusat bawah mercusuar di layar.
+ * @param y       Koordinat Y pusat bawah mercusuar di layar.
+ * @param scale   Faktor skala objek (1.0 = ukuran normal).
+ * @param variant Mode lampu: 0 = lampu menyala, 1 = lampu mati.
+ * @param isWire  Jika true, hanya garis tepi yang digambar (mode wireframe).
  */
-void DrawMercusuar_Pola(float x, float y, float scale, int variant, bool isWireframe);
+void DrawMercusuar_Pola(float x, float y, float scale, int variant, bool isWire);
 
 #endif // BANGUNAN_H

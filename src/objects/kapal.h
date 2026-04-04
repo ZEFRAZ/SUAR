@@ -6,45 +6,44 @@
 
 /**
  * @file kapal.h
- * @brief Deklarasi matriks perenderan armada maritim (Maritime Fleet Rendering Matrix).
- * 
- * Mengekspos pustaka rutin pendefinisian entitas maritim tingkat tinggi.
- * Setiap model kapal direpresentasikan oleh kumpulan poligon vektor kompleks,
- * kurva Bezier, dan simulasi partikel (asap cerobong), yang diproses secara dinamis
- * berdasarkan perhitungan posisi dan ukuran (Pergeseran, Skala, Putaran).
+ * @brief Deklarasi fungsi penggambaran semua jenis kapal.
+ *
+ * Modul ini menyediakan fungsi untuk menggambar 9 jenis kapal yang berbeda.
+ * Setiap kapal mendukung mode solid dan wireframe, serta dapat dikustomisasi
+ * warna lambung dan detailnya. Kapal layar juga mendukung animasi sailFlap.
  */
 
-/** @brief Merender entitas Kapal Kargo komersial pengangkut peti kemas. */
-void DrawShip_Cargo(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWireframe);
+/** @brief Menggambar Kapal Kargo lengkap dengan kontainer bertumpuk dan kabin navigasi. */
+void DrawShip_Cargo(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire);
 
-/** @brief Merender entitas Kapal Pesiar wisata berskala besar dengan multi-geladak. */
-void DrawShip_Cruise(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWireframe);
+/** @brief Menggambar Kapal Pesiar besar berlapis-lapis dengan cerobong oranye. */
+void DrawShip_Cruise(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire);
 
-/** @brief Merender entitas Kapal Perang militer kelas perusak bersenjatakan meriam balistik. */
-void DrawShip_Military(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWireframe);
+/** @brief Menggambar Kapal Perang militer bergaya perusak dengan meriam dan radar. */
+void DrawShip_Military(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire);
 
-/** @brief Merender entitas Kapal Nelayan pukat tarik tradisional berskala kecil. */
-void DrawShip_Fishing(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWireframe);
+/** @brief Menggambar Kapal Nelayan tradisional dengan derek dan tali temali. */
+void DrawShip_Fishing(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire);
 
-/** @brief Merender entitas Kapal Riset observasi oseanografi tingkat lanjut. */
-void DrawShip_Research(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWireframe);
+/** @brief Menggambar Kapal Riset oseanografi dengan lambung bertingkat asimetris. */
+void DrawShip_Research(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire);
 
-/** @brief Merender entitas Kapal Ekspedisi Pesiar mewah (Luxury Yacht) bersiluet minimalis modern. */
-void DrawShip_Yacht(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWireframe);
+/** @brief Menggambar Kapal Yacht mewah bergaya modern dan minimalis. */
+void DrawShip_Yacht(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire);
 
-/** @brief Pembungkus basis (Base Wrapper) untuk rendering formasi Kapal Bajak Laut layar ganda. */
-void DrawShip_Pirate(float x, float y, float scale, float angle, float sailFlap, Color hullCol, Color sailCol, bool isWireframe);
+/** @brief Menggambar Kapal Bajak Laut varian 0 (klasik dengan tiga tiang). */
+void DrawShip_Pirate(float x, float y, float scale, float angle, float sailFlap, Color hullCol, Color sailCol, bool isWire);
 
-/** @brief Mengeksekusi perenderan kapal bertiang ganda (Galleon) berlambung masif tipe Armada Spanyol. */
+/** @brief Menggambar salah satu dari dua varian Kapal Galiung dagang (Eropa atau Jong Asia). */
 void DrawShip_Galleon(float x, float y, float scale, float angle, float sailFlap, int variant, bool isWire);
 
-/** @brief Pembungkus basis (Base Wrapper) untuk rendering formasi Kapal Layar tunggal (Sloop). */
-void DrawShip_Sloop(float x, float y, float scale, float angle, float sailFlap, Color hullCol, Color sailCol, bool isWireframe);
+/** @brief Menggambar Kapal Layar kecil (Sloop) varian 0 (putih-merah). */
+void DrawShip_Sloop(float x, float y, float scale, float angle, float sailFlap, Color hullCol, Color sailCol, bool isWire);
 
-/** @brief Pemilih variasi turunan dari model dasar Kapal Bajak Laut berlambung besar. */
+/** @brief Menggambar salah satu dari tiga varian Kapal Bajak Laut. */
 void DrawShip_Pirate_Variant(float x, float y, float scale, float angle, float sailFlap, int variant, bool isWire);
 
-/** @brief Pemilih variasi turunan dari model dasar Kapal Layar Sloop bermanuver lincah. */
+/** @brief Menggambar salah satu dari tiga varian Kapal Layar kecil (Sloop). */
 void DrawShip_Sloop_Variant(float x, float y, float scale, float angle, float sailFlap, int variant, bool isWire);
 
 #endif // KAPAL_H

@@ -1,11 +1,13 @@
-# Abaikan file hasil kompilasi
-*.o
-*.res
+# Build files
 *.exe
-SUAR.exe
+*.o
+*.dll
+icon.res
 
-# Abaikan file pengaturan editor visual studio code
+# VS Code / IDE
 .vscode/
 
-# Abaikan folder panduan belajar probadi
-Panduan_Kode/
+# Antigravity / Gemini files
+prompt.md
+.antigravityignore
+.gemini/

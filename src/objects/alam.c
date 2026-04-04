@@ -1,10 +1,13 @@
-// =============================================================================
-//  alam.c — Objek Alam & Cuaca
-//  Deskripsi: Kumpulan fungsi penggambaran elemen lingkungan:
-//             Awan, Burung, Gunung, Tebing, Matahari/Bulan, Bintang,
-//             Kabut, Ombak, Hujan/Badai, Rasi Bintang.
-//  Catatan  : Semua fungsi mendukung mode Solid (isWire=false) dan Mode Wireframe (isWire=true, warna selalu GREEN).
-// =============================================================================
+/**
+ * @file alam.c
+ * @brief Penggambaran semua elemen alam dan cuaca.
+ *
+ * File ini berisi fungsi untuk menggambar seluruh objek lingkungan:
+ * awan, burung, gunung, tebing, matahari, bulan, bintang, kabut,
+ * ombak berlapis, hujan/badai petir, dan rasi bintang kustom.
+ *
+ * Semua fungsi mendukung mode solid (isWire=false) dan wireframe (isWire=true).
+ */
 
 #include "alam.h"
 #include "../ui/draw_helpers.h"
@@ -13,28 +16,27 @@
 #include <math.h>
 #include "raymath.h"
 
-// --- Variabel Global (Diambil dari pola2d.c via extern) ----------------------
-extern Font  polaFont;    // Font untuk teks debug (mode Wireframe)
-extern float previewTime; // Waktu animasi global (detik)
+// Variabel dari pola2d.c — dibutuhkan untuk animasi dan teks debug
+extern Font  polaFont;    // Font untuk teks label di mode wireframe
+extern float previewTime; // Waktu animasi global dalam detik
 
 /**
- * @brief Merender formasi awan.
- * 
- * Melakukan kalkulasi parametrik atas 4 titik kontrol (P0 sebagai jangkar awal, P1/P2 pelengkung, P3 jangkar akhir).
- * Algoritma Bezier diaplikasikan secara berurutan untuk membentuk struktur kumulus berlapis.
- * Fungsi ini dibuat untuk meniru cara kerja fungsi bezierCurveTo.
- * 
- * @param type Identifikasi tipe model geometri awan (0 hingga 3).
- * @param x Posisi absolut X titik awal.
- * @param y Posisi absolut Y titik awal.
- * @param scale Faktor penskalaan matriks spasial.
- * @param c Nilai warna solid untuk mode perenderan raster padat (Non-Wireframe).
- * @param isWire Status pengaktifan kerangka geometri hijau.
+ * @brief Menggambar formasi awan dengan kurva Bezier kubik.
+ *
+ * Setiap awan dibentuk dari beberapa kurva Bezier kubik yang disambung
+ * sehingga menghasilkan bentuk awan yang membulat dan alami.
+ *
+ * @param type  Jenis bentuk awan (0 hingga 3 — masing-masing bentuk berbeda).
+ * @param x     Koordinat X pusat awan di layar.
+ * @param y     Koordinat Y pusat awan di layar.
+ * @param scale Faktor skala awan.
+ * @param c     Warna awan di mode solid.
+ * @param isWire Jika true, hanya garis tepi yang digambar.
  */
 void DrawAwan_Pola(int type, float x, float y, float scale, Color c, bool isWire) {
     Color outLine = isWire ? GREEN : BLANK;
 
-    // Makro Evaluasi Polinomial Bezier Kubik
+    // Makro bantu untuk menambah titik kurva Bezier kubik ke dalam array
     #define ADD_CUBIC(arr, idx, px0, py0, px1, py1, px2, py2, px3, py3) \
         for(int _i=1; _i<=12; _i++) { \
             float _t = _i/12.0f; float _inv = 1.0f - _t; \
@@ -43,18 +45,16 @@ void DrawAwan_Pola(int type, float x, float y, float scale, Color c, bool isWire
             arr[idx++] = (Vector2){_x, _y}; \
         }
 
-    // Penyesuaian faktor skala matriks batas ruang pandang (Viewport Context)
-    float s = scale * 0.4f; 
+    float s = scale * 0.4f; // Skala diperkecil agar awan tidak terlalu besar
 
-    // Pengelompokan matriks awan parsial untuk formasi kumulus pusat
+    // Setiap awan digambar dengan posisi yang sedikit berbeda agar terlihat tersebar
     float offsetX[4] = {-200.0f, 180.0f, -150.0f, 150.0f};
     float offsetY[4] = {-120.0f, -150.0f, 100.0f, 80.0f};
 
     for (int cloudType = 0; cloudType < 4; cloudType++) {
         Vector2 pts[50]; int pIdx = 0;
         
-        // Titik jangkar asal (Origin Anchor Point)
-        pts[pIdx++] = (Vector2){0, 0}; 
+        pts[pIdx++] = (Vector2){0, 0}; // Titik awal awan
 
         if (cloudType == 0) {
             ADD_CUBIC(pts, pIdx, 0, 0, -30, 0, -40, -30, -10, -40);
@@ -74,7 +74,7 @@ void DrawAwan_Pola(int type, float x, float y, float scale, Color c, bool isWire
             ADD_CUBIC(pts, pIdx, 40, -20, 60, -20, 60, 0, 40, 0);
         }
 
-        // Draw menggunakan helper
+        // Gambar poligon awan ke posisi yang sudah digeser
         DrawCustomPoly(pts, pIdx, x + (offsetX[cloudType] * s), y + (offsetY[cloudType] * s), s, 0, c, outLine, isWire);
     }
     
@@ -82,35 +82,39 @@ void DrawAwan_Pola(int type, float x, float y, float scale, Color c, bool isWire
 }
 
 /**
- * @brief Menganimasikan bentuk burung terbang menggunakan model kinematika mengepak parsial (Flapping Wing Kinematics).
- * 
- * Sayap direpresentasikan oleh dua sub-kurva Bezier simetris yang parameter ujung sayapnya
- * didorong secara dinamis menggunakan nilai osilasi dari sebuah fungsi trigonometri eksternal (flapPhase).
- * 
- * @param flapPhase Faktor siklus gelombang pergerakan sayap, dengan interpolasi sinusoida (0.0 hingga 1.0).
+ * @brief Menggambar satu burung camar dengan animasi kepakan sayap.
+ *
+ * Sayap kiri dan kanan masing-masing dibentuk dari satu kurva Bezier.
+ * Parameter flapPhase menentukan seberapa tinggi ujung sayap terangkat
+ * (0.0 = sayap datar, 1.0 = sayap terangkat penuh).
+ *
+ * @param flapPhase Fase kepakan sayap (0.0 hingga 1.0).
  */
 void DrawBurung_Pola(float x, float y, float scale, float flapPhase, Color c, bool isWire) {
     Color outLine = isWire ? GREEN : c;
-    
-    // Penegasan radius batas solid (Solid Stroke Radius Margin)
-    float th = isWire ? 0.0f : 1.5f; 
-    
-    for(float off = -th; off <= th; off += 1.0f) {
-        // Sayap Kiri
+
+    // Di mode solid, garis sayap digambar dua kali dengan offset kecil agar terlihat lebih tebal
+    float th = isWire ? 0.0f : 1.5f;
+
+    for (float off = -th; off <= th; off += 1.0f) {
+        // Sayap kiri — melengkung ke atas mengikuti flapPhase
         DrawCustomBezier((Vector2){-15.0f, -12.0f * flapPhase + off}, (Vector2){-7.0f, 0.0f + off}, (Vector2){0.0f, 0.0f + off}, x, y, scale, 0.0f, BLANK, outLine, isWire);
-        // Sayap Kanan
+        // Sayap kanan — simetris dengan sayap kiri
         DrawCustomBezier((Vector2){0.0f, 0.0f + off}, (Vector2){7.0f, 0.0f + off}, (Vector2){15.0f, -12.0f * flapPhase + off}, x, y, scale, 0.0f, BLANK, outLine, isWire);
-        
-        if (isWire) break; // Wireframe cukup 1 lapis garis (hijau)
+
+        if (isWire) break; // Wireframe cukup digambar satu kali
     }
 }
 
 /**
- * @brief Merender lansekap pegunungan poligon rendah (Low-Poly) dengan stratifikasi kedalaman 3 lapisan.
- * 
- * Untuk mensimulasikan efek kedalaman atmosferik (Aerial Perspective), teknik peneduhan faset (Facet Shading)
- * diaplikasikan pada setiap lapisan (Jauh, Tengah, Dekat). Saturasi warna meredup sebanding dengan jarak z-index.
- * Pembentukan bentuk geometri dieksekusi dengan matriks koordinat proporsional (MX dan MY) relatif terhadap bounding box.
+ * @brief Menggambar pemandangan gunung tiga lapis (jauh, tengah, dekat).
+ *
+ * Setiap lapisan terdiri dari beberapa poligon dengan warna yang makin gelap
+ * saat semakin dekat ke depan, menciptakan efek kedalaman yang alami.
+ * Setiap gunung juga memiliki sisi terang dan sisi gelap untuk kesan dimensi.
+ *
+ * @param w Lebar area gunung dalam piksel.
+ * @param h Tinggi area gunung dalam piksel.
  */
 void DrawGunung_Pola(float x, float y, float w, float h, Color baseColor, bool isWire) {
     int bR = 224, bG = 246, bB = 255; 
@@ -120,13 +124,13 @@ void DrawGunung_Pola(float x, float y, float w, float h, Color baseColor, bool i
     float topY  = y - h / 2.0f;
     float botY  = y + h / 2.0f;
 
-    // Macro Skala Presisi
+    // Makro bantu untuk mengubah persentase menjadi koordinat piksel
     #define MX(perc) (leftX + (w * (perc)))
     #define MY(perc) (topY + (h * (perc)))
 
-    // =========================================================
-    // 1. FAR LAYER (Gunung Belakang)
-    // =========================================================
+    // =========================================================================
+    // LAPISAN 1: GUNUNG JAUH (paling belakang, warna paling terang)
+    // =========================================================================
     Color fCol = { (unsigned char)(bR*0.8f),  (unsigned char)(bG*0.8f),  (unsigned char)(bB*0.9f), 255 };
     Color fDrk = { (unsigned char)(bR*0.7f),  (unsigned char)(bG*0.7f),  (unsigned char)(bB*0.8f), 255 };
     Color fLgt = { (unsigned char)(bR*0.85f), (unsigned char)(bG*0.85f), (unsigned char)(bB*0.95f), 255 };
@@ -138,22 +142,23 @@ void DrawGunung_Pola(float x, float y, float w, float h, Color baseColor, bool i
     };
     DrawCustomPoly(fBase, 8, 0, 0, 1.0f, 0.0f, fCol, outLine, isWire);
 
-    // Poligon Facet Puncak Sisi Kiri (Terpapar Cahaya)
+    // Sisi terang (terkena cahaya) dan sisi gelap puncak kiri
     Vector2 fP1_L[] = { {MX(0.00f), botY}, {MX(0.00f), MY(0.60f)}, {MX(0.25f), MY(0.45f)}, {MX(0.22f), MY(0.52f)}, {MX(0.24f), MY(0.58f)}, {MX(0.0f), botY} };
     DrawCustomPoly(fP1_L, 6, 0, 0, 1.0f, 0.0f, fLgt, outLine, isWire);
 
     Vector2 fP1_D[] = { {MX(0.50f), botY}, {MX(0.50f), MY(0.55f)}, {MX(0.25f), MY(0.45f)}, {MX(0.28f), MY(0.52f)}, {MX(0.26f), MY(0.58f)}, {MX(0.60f), botY} };
     DrawCustomPoly(fP1_D, 6, 0, 0, 1.0f, 0.0f, fDrk, outLine, isWire);
 
+    // Sisi terang dan sisi gelap puncak kanan
     Vector2 fP2_L[] = { {MX(0.50f), botY}, {MX(0.79f), MY(0.56f)}, {MX(0.77f), MY(0.50f)}, {MX(0.80f), MY(0.42f)}, {MX(0.50f), MY(0.55f)} };
     DrawCustomPoly(fP2_L, 5, 0, 0, 1.0f, 0.0f, fLgt, outLine, isWire);
 
     Vector2 fP2_D[] = { {MX(1.00f), botY}, {MX(0.81f), MY(0.56f)}, {MX(0.83f), MY(0.50f)}, {MX(0.80f), MY(0.42f)}, {MX(1.00f), MY(0.60f)} };
     DrawCustomPoly(fP2_D, 5, 0, 0, 1.0f, 0.0f, fDrk, outLine, isWire);
 
-    // =========================================================
-    // 2. MID LAYER (Gunung Tengah)
-    // =========================================================
+    // =========================================================================
+    // LAPISAN 2: GUNUNG TENGAH (lebih dekat, warna lebih gelap)
+    // =========================================================================
     Color mCol = { (unsigned char)(bR*0.6f),  (unsigned char)(bG*0.6f),  (unsigned char)(bB*0.7f), 255 };
     Color mDrk = { (unsigned char)(bR*0.5f),  (unsigned char)(bG*0.5f),  (unsigned char)(bB*0.6f), 255 };
     Color mLgt = { (unsigned char)(bR*0.65f), (unsigned char)(bG*0.65f), (unsigned char)(bB*0.75f), 255 };
@@ -177,9 +182,9 @@ void DrawGunung_Pola(float x, float y, float w, float h, Color baseColor, bool i
     Vector2 mP2_D[] = { {MX(0.90f), botY}, {MX(0.66f), MY(0.63f)}, {MX(0.68f), MY(0.55f)}, {MX(0.65f), MY(0.48f)}, {MX(0.90f), MY(0.65f)} };
     DrawCustomPoly(mP2_D, 5, 0, 0, 1.0f, 0.0f, mDrk, outLine, isWire);
 
-    // =========================================================
-    // 3. NEAR LAYER (Gunung Depan Clean Low-Poly)
-    // =========================================================
+    // =========================================================================
+    // LAPISAN 3: GUNUNG DEPAN (paling dekat, warna paling gelap)
+    // =========================================================================
     Color nCol = { (unsigned char)(bR*0.4f),  (unsigned char)(bG*0.4f),  (unsigned char)(bB*0.5f), 255 };
     Color nDrk = { (unsigned char)(bR*0.3f),  (unsigned char)(bG*0.3f),  (unsigned char)(bB*0.4f), 255 };
     Color nLgt = { (unsigned char)(bR*0.45f), (unsigned char)(bG*0.45f), (unsigned char)(bB*0.55f), 255 };
@@ -191,14 +196,14 @@ void DrawGunung_Pola(float x, float y, float w, float h, Color baseColor, bool i
     };
     DrawCustomPoly(nBase, 8, 0, 0, 1.0f, 0.0f, nCol, outLine, isWire);
 
-    // --- PUNCAK 1 (KIRI) ---
+    // Puncak kiri — sisi terang dan sisi gelap
     Vector2 nP1_L[] = { {MX(0.00f), botY}, {MX(0.05f), botY}, {MX(0.05f), MY(0.55f)}, {MX(0.00f), MY(0.60f)} };
     DrawCustomPoly(nP1_L, 4, 0, 0, 1.0f, 0.0f, nLgt, outLine, isWire);
-    
+
     Vector2 nP1_D[] = { {MX(0.05f), botY}, {MX(0.20f), botY}, {MX(0.20f), MY(0.65f)}, {MX(0.05f), MY(0.55f)} };
     DrawCustomPoly(nP1_D, 4, 0, 0, 1.0f, 0.0f, nDrk, outLine, isWire);
 
-    // --- PUNCAK 2 (TENGAH) ---
+    // Puncak tengah — sisi terang dan sisi gelap
     Vector2 nP2_L[] = { {MX(0.20f), botY}, {MX(0.30f), botY}, {MX(0.45f), MY(0.52f)}, {MX(0.20f), MY(0.65f)} };
     DrawCustomPoly(nP2_L, 4, 0, 0, 1.0f, 0.0f, nLgt, outLine, isWire);
     
@@ -210,13 +215,13 @@ void DrawGunung_Pola(float x, float y, float w, float h, Color baseColor, bool i
 }
 
 /**
- * @brief Menggambar pemandangan tebing karang beserta rumah penjaga dan rumput.
- * 
- * Melibatkan pemecahan bidang-bidang trapesium tak beraturan untuk struktur bebatuan asimetris.
- * Permukaan atas tebing dilapisi vegetasi rumput yang dilengkungkan mengikuti interpolasi titik-titik
- * kontrol kurva kuadratik berseri (Quadratic Bezier Curve) untuk memberikan topologi tebing yang melandai.
- * 
- * @param w Skalar rasio perbesaran untuk ukuran tebing keseluruhan (bukan mewakili lebar linier).
+ * @brief Menggambar tebing pantai beserta rumah penjaga dan pagar pengaman.
+ *
+ * Tebing dibentuk dari beberapa poligon batu karang dengan warna berbeda
+ * untuk memberi kesan dimensi. Permukaan atasnya dilapisi rumput melengkung
+ * yang dibentuk dari kurva Bezier kuadratik.
+ *
+ * @param w Pengali skala keseluruhan tebing.
  */
 void DrawTebing_Pola(float x, float y, float w, float h, Color rockCol, Color grassCol, bool isWire) {
     // 'w' berfungsi sebagai pengali skala agar tebing bisa diperbesar bebas
@@ -242,15 +247,15 @@ void DrawTebing_Pola(float x, float y, float w, float h, Color rockCol, Color gr
     Vector2 p6[] = {{30, 15}, {110, 15}, {70, 150}, {30, 80}}; DrawCustomPoly(p6, 4, x, y, s, 0, cR2, o2, isWire);
     Vector2 p7[] = {{110, 15}, {180, 15}, {140, 90}}; DrawCustomPoly(p7, 3, x, y, s, 0, cR3, o3, isWire);
     
-    // Poligon Facet Patahan Sudut Curam
+    // Patahan batu sisi kanan tebing
     Vector2 p8[] = {{70, 150}, {110, 15}, {140, 90}, {rX, 40}, {rX, botY}, {150, botY}}; DrawCustomPoly(p8, 6, x, y, s, 0, cR4, o4, isWire);
     Vector2 p9[] = {{180, 15}, {rX, 15}, {rX, 40}}; DrawCustomPoly(p9, 3, x, y, s, 0, cR5, o5, isWire);
 
-    // Makro Evaluasi Polinomial Bezier Kuadratik (Quadratic Bezier Evaluation Macro)
+    // Makro bantu untuk menambah titik kurva Bezier kuadratik ke dalam array
     #define ADD_Q(arr, idx, px0, py0, px1, py1, px2, py2) \
         for(int _i=1; _i<=10; _i++) { float _t = _i/10.0f; float _in = 1.0f - _t; arr[idx++] = (Vector2){_in*_in*(px0) + 2.0f*_in*_t*(px1) + _t*_t*(px2), _in*_in*(py0) + 2.0f*_in*_t*(py1) + _t*_t*(py2)}; }
 
-    // 2. Hamparan Rumput Melengkung (Dark)
+    // Lapisan rumput bawah (warna gelap)
     Color cG1 = (Color){45, 70, 35, 255};
     Vector2 g1[100]; int g1Idx = 0;
     g1[g1Idx++] = (Vector2){-145, 0}; g1[g1Idx++] = (Vector2){-145, 25};
@@ -261,7 +266,7 @@ void DrawTebing_Pola(float x, float y, float w, float h, Color rockCol, Color gr
     ADD_Q(g1, g1Idx, 200, 20, 205, 24, rX, 18);
     g1[g1Idx++] = (Vector2){rX, 18}; g1[g1Idx++] = (Vector2){rX, 0};
     
-    // 3. Hamparan Rumput Highlight (Light)
+    // Lapisan rumput atas (warna lebih terang sebagai highlight)
     Color cG2 = (Color){60, 90, 45, 255};
     Vector2 g2[100]; int g2Idx = 0;
     g2[g2Idx++] = (Vector2){-142, 0}; g2[g2Idx++] = (Vector2){-142, 20};
@@ -273,15 +278,15 @@ void DrawTebing_Pola(float x, float y, float w, float h, Color rockCol, Color gr
 
     if (!isWire) {
         Vector2 gCenter = TransformPola(-145, 0, x, y, s, 0);
-        for(int i=0; i<g1Idx-1; i++) { Vector2 p1 = TransformPola(g1[i].x, g1[i].y, x, y, s, 0); Vector2 p2 = TransformPola(g1[i+1].x, g1[i+1].y, x, y, s, 0); DrawTriangle(gCenter, p1, p2, cG1); DrawTriangle(gCenter, p2, p1, cG1); }
-        for(int i=0; i<g2Idx-1; i++) { Vector2 p1 = TransformPola(g2[i].x, g2[i].y, x, y, s, 0); Vector2 p2 = TransformPola(g2[i+1].x, g2[i+1].y, x, y, s, 0); DrawTriangle(gCenter, p1, p2, cG2); DrawTriangle(gCenter, p2, p1, cG2); }
+        for(int i=0; i<g1Idx-1; i++) { Vector2 p1 = TransformPola(g1[i].x, g1[i].y, x, y, s, 0); Vector2 p2 = TransformPola(g1[i+1].x, g1[i+1].y, x, y, s, 0); FillTri_Fast(gCenter, p1, p2, cG1); FillTri_Fast(gCenter, p2, p1, cG1); }
+        for(int i=0; i<g2Idx-1; i++) { Vector2 p1 = TransformPola(g2[i].x, g2[i].y, x, y, s, 0); Vector2 p2 = TransformPola(g2[i+1].x, g2[i+1].y, x, y, s, 0); FillTri_Fast(gCenter, p1, p2, cG2); FillTri_Fast(gCenter, p2, p1, cG2); }
     } else {
         for(int i=0; i<g1Idx-1; i++) { Vector2 p1 = TransformPola(g1[i].x, g1[i].y, x, y, s, 0); Vector2 p2 = TransformPola(g1[i+1].x, g1[i+1].y, x, y, s, 0); AlgoLine((int)p1.x, (int)p1.y, (int)p2.x, (int)p2.y, GREEN); }
         for(int i=0; i<g2Idx-1; i++) { Vector2 p1 = TransformPola(g2[i].x, g2[i].y, x, y, s, 0); Vector2 p2 = TransformPola(g2[i+1].x, g2[i+1].y, x, y, s, 0); AlgoLine((int)p1.x, (int)p1.y, (int)p2.x, (int)p2.y, GREEN); }
         
-        // Penutupan lintasan atas poligon batas siluet padang rumput (Top Surface Wireframe Closure)
+        // Tutup kontur bawah rumput agar poligon tampak tertutup
         Vector2 g1First = TransformPola(g1[0].x, g1[0].y, x, y, s, 0);
-        Vector2 g1Last = TransformPola(g1[g1Idx-1].x, g1[g1Idx-1].y, x, y, s, 0);
+        Vector2 g1Last  = TransformPola(g1[g1Idx-1].x, g1[g1Idx-1].y, x, y, s, 0);
         AlgoLine((int)g1Last.x, (int)g1Last.y, (int)g1First.x, (int)g1First.y, GREEN);
 
         Vector2 g2First = TransformPola(g2[0].x, g2[0].y, x, y, s, 0);
@@ -309,10 +314,12 @@ void DrawTebing_Pola(float x, float y, float w, float h, Color rockCol, Color gr
 }
 
 /**
- * @brief Memproyeksikan cakram Matahari bersinar secara interaktif dipengaruhi oleh parameter siang/malam.
- * 
- * Untuk memancarkan ilusi cahaya yang berpendar (glow effect), deretan lingkaran semi-transparan (alpha-blended) 
- * berwarna gradasi digambar berlapis di belakang matahari utama.
+ * @brief Menggambar matahari dengan efek cahaya berpendar.
+ *
+ * Efek berpendar dibuat dari beberapa lingkaran transparan yang ditumpuk
+ * di belakang lingkaran utama. Tingkat kecerahan diatur oleh parameter daylight.
+ *
+ * @param daylight Tingkat kecerahan siang hari (0.0 = malam, 1.0 = siang penuh).
  */
 void DrawMatahari_Animasi(float x, float y, float scale, float daylight, bool isWire) {
     Color outLine = isWire ? GREEN : BLANK;
@@ -333,10 +340,12 @@ void DrawMatahari_Animasi(float x, float y, float scale, float daylight, bool is
 }
 
 /**
- * @brief Memproyeksikan fase Bulan purnama disertai kawah diskrit secara interaktif berdasarkan parameter malam.
- * 
- * Seperti matahari, Bulan memuat algoritma cincin pendar (*glow ring*) progesif. 
- * Topologi kawah dibentuk oleh susunan tiga elips primitif bernuansa relatif gelap yang di-[render] secara asimetris.
+ * @brief Menggambar bulan purnama dengan kawah dan efek cahaya berpendar.
+ *
+ * Kawah digambar sebagai tiga lingkaran kecil berwarna gelap di atas permukaan bulan.
+ * Efek pendar dihasilkan dengan cara yang sama seperti matahari.
+ *
+ * @param nightlight Tingkat kecerahan malam hari (0.0 = siang, 1.0 = malam penuh).
  */
 void DrawBulan_Animasi(float x, float y, float scale, float nightlight, bool isWire) {
     Color outLine = isWire ? GREEN : BLANK;
@@ -364,9 +373,9 @@ void DrawBulan_Animasi(float x, float y, float scale, float nightlight, bool isW
 }
 
 /**
- * @brief Antarmuka pembungkus (Wrapper Interface) penempatan Matahari dan Bulan dalam mode presentasi statis (Pola 2D).
- * 
- * Fungsi ini bertugas menegasikan komponen trigonometri sistem orbital pusat ke titik jangkar X arbitrer.
+ * @brief Menggambar matahari dan bulan berdampingan untuk layar showcase Pola 2D.
+ *
+ * Matahari diletakkan di kiri dan bulan di kanan dari titik tengah yang diberikan.
  */
 void DrawBulanMatahari_Pola(float x, float y, float scale, bool isWire) {
     // Geser titik tengah dunia ke kiri (-120) untuk Matahari dan kanan (+120) untuk Bulan
@@ -378,22 +387,20 @@ void DrawBulanMatahari_Pola(float x, float y, float scale, bool isWire) {
 }
 
 /**
- * @brief Menghasilkan hamparan Bintang berkelip menggunakan model Penentuan Acak Sintetis (Pseudo-Random Generation).
- * 
- * Ketimbang melakukan penyediaan memori larik array (memory array allocation), posisi tiap bintang dihitung *on the fly* 
- * mempergunakan fungsi hash trigonometri deterministik (sin-hash) agar posisinya konstan namun terlihat acak.
- * Efek kerlap-kerlip terhubung lurus terhadap pengali `previewTime` yang dimodulasi kecepatan individual partikel.
+ * @brief Menggambar hamparan bintang berkelip di langit malam.
+ *
+ * Posisi setiap bintang dihitung menggunakan fungsi hash sinus agar posisinya
+ * tetap konsisten setiap frame namun terlihat acak — tanpa perlu menyimpan array posisi.
+ * Efek kerlip dibuat dari fungsi sinus yang berjalan dengan kecepatan berbeda per bintang.
  */
 void DrawBintang_Pola(float x, float y, float scale, Color c, bool isWire) {
     int numStars = 200; 
     float areaW = 1300.0f; 
     float areaH = 650.0f;  
 
-    // Batas layar mutlak (Tidak ada cahaya yang boleh lewat dari kotak ini)
     float startX = x - areaW / 2.0f;
     float startY = y - areaH / 2.0f - 40.0f;
 
-    // Helper Kliping Titik
     #define IN_BOX(px, py) ((px) >= startX && (px) <= endX && (py) >= startY && (py) <= endY)
 
     // ==========================================
@@ -417,28 +424,25 @@ void DrawBintang_Pola(float x, float y, float scale, Color c, bool isWire) {
         Color starCol = isWire ? GREEN : (Color){255, 255, 255, (unsigned char)(255.0f * twinkle)};
         
         if (isWire) {
-            DrawCircleLinesV((Vector2){starX, starY}, size, GREEN);
+            Midcircle((int)starX, (int)starY, (int)size, GREEN);
         } else {
-            DrawCircleV((Vector2){starX, starY}, size, starCol);
+            FillCircle_Fast((int)starX, (int)starY, (int)size, starCol);
         }
     }
     #undef IN_BOX
 }
 
 /**
- * @brief Menerapkan filter kabut atmosferik mengandalkan gradasi linier vertikal berformat RGBA.
- * 
- * Menyediakan transisi kehalusan (blend) antara batas horizon laut dengan elemen pegunungan, 
- * secara visual membuat batas tepi terburamkan menyesuaikan nilai Alpha dari atas 0% ke bawah 100%.
+ * @brief Menggambar efek kabut tipis di bagian horizon dengan gradasi transparan.
+ *
+ * Kabut digambar sebagai persegi panjang dengan gradasi vertikal dari
+ * transparan (atas) ke setengah buram (bawah), menciptakan kesan jarak.
  */
 void DrawKabut_Pola(float x, float y, float scale, bool isWire) {
-    // Konstruksi gradient linier vertikal efek atmosfer
     float fogW = 1400.0f;
-    float fogH = 400.0f; // Elevasi ambang asimtotis atmosfer
+    float fogH = 400.0f; // Tinggi area kabut
     float fogX = x - fogW / 2.0f;
-    
-    // Jarak Offset Y absolut
-    float fogY = y - 100.0f; 
+    float fogY = y - 100.0f;
 
     if (!isWire) {
         // Pemetaan matriks warna gradien
@@ -452,16 +456,11 @@ void DrawKabut_Pola(float x, float y, float scale, bool isWire) {
 }
 
 /**
- * @brief Algoritma intisari pengeksekusi pembayangan Dinamika Fluida Ombak Laut (Ocean Wave Fluid Dynamics).
- * 
- * Ombak dihasilkan dengan menderivasi interpolasi Sinus Ganda (Double-Sine Wave Interpolation),
- * di mana gelombang primer beramplitudo tinggi dipadukan (blend) bersama gelombang sekunder berfrekuensi dua kali lipat,
- * manghasilkan puncak gelombang laut yang terinterupsi secara organik tanpa terkesan repetitif.
- * 
- * Algoritma perenderan Solid secara brilian hanya menggambar puncak segi tiga untuk mengisi lereng bukit gelombang,
- * sebelum secara vertikal diguyur dengan pewarnaan gradien (Gradient Fill) ke tingkat titik palung samudera.
- * 
- * Buih laut (foam) terbentuk menggunakan deteksi kemiringan sinus: bila nilai f(x)<0.2, maka partikel elips buih dibaca dan digambar.
+ * @brief Menggambar satu lapisan ombak laut dengan buih di puncaknya.
+ *
+ * Bentuk ombak dihitung dari gabungan dua fungsi sinus dengan frekuensi berbeda
+ * agar pola gelombang tidak terlihat berulang dan tampak lebih alami.
+ * Buih muncul di titik-titik lembah gelombang dan digambar sebagai elips kecil.
  */
 void DrawOmbak_Lapisan(float startX, float endX, float bottomY, float seaBaseY, float amplitude, float frequency, float baseSpeed, Color colTop, Color colBot, float offset, bool hasFoam, float pWave, float daylight, bool isWire) {
     
@@ -469,32 +468,32 @@ void DrawOmbak_Lapisan(float startX, float endX, float bottomY, float seaBaseY, 
     Vector2 pts[200];
     int pCount = 0;
     
-    // 1. Pemotongan Matriks Sinusoida Horizontal (Precise Horizontal Clipping)
+    // Hitung titik-titik permukaan ombak dari kiri ke kanan
     for (float px = startX; px <= endX + step; px += step) {
-        float actualX = (px > endX) ? endX : px; // Limitasi Clamp
+        float actualX = (px > endX) ? endX : px; // Batasi di tepi kanan
         float wave1 = amplitude * sinf(actualX * frequency + pWave * baseSpeed);
         float wave2 = (amplitude * 0.3f) * sinf(actualX * frequency * 2.1f + pWave * baseSpeed * 1.4f);
         float py = seaBaseY + offset + wave1 + wave2;
-        
+
         if (pCount < 200) pts[pCount++] = (Vector2){actualX, py};
-        if (actualX == endX) break; // Keluar dari proses pengulangan
+        if (actualX == endX) break;
     }
-    
-    // 2. Deteksi Titik Palung Maksimal (Trough Depth Detection)
-    float maxDepth = seaBaseY + offset + (amplitude * 1.5f); 
+
+    // Batas bawah pengisian — sedikit di bawah lembah ombak terdalam
+    float maxDepth = seaBaseY + offset + (amplitude * 1.5f);
     
     if (!isWire) {
-        // Menggambar bentuk gelombang ombak
+        // Isi area di bawah permukaan ombak dengan warna laut
         for (int i = 0; i < pCount - 1; i++) {
-            Vector2 tl = pts[i]; 
+            Vector2 tl = pts[i];
             Vector2 tr = pts[i+1];
-            Vector2 bl = {tl.x, maxDepth};  
+            Vector2 bl = {tl.x, maxDepth};
             Vector2 br = {tr.x, maxDepth};
-            
-            DrawTriangle(tl, bl, br, colTop);
-            DrawTriangle(tl, br, tr, colTop);
+
+            FillTri_Fast(tl, bl, br, colTop);
+            FillTri_Fast(tl, br, tr, colTop);
         }
-        // Pengisian gradasi badan elevasi kedalaman laut (Sea Box Depth Interpolation)
+        // Isi bagian bawah layar dengan gradasi dari warna atas ke bawah
         if (bottomY > maxDepth) {
             DrawRectangleGradientV((int)startX, (int)maxDepth, (int)(endX - startX), (int)(bottomY - maxDepth), colTop, colBot);
         }
@@ -507,7 +506,7 @@ void DrawOmbak_Lapisan(float startX, float endX, float bottomY, float seaBaseY, 
         AlgoLine((int)startX, (int)bottomY, (int)pts[0].x, (int)pts[0].y, GREEN);
     }
 
-    // 3. Proyeksi Partikel Buih Organik (Organic Foam Particles Projection)
+    // Gambar buih di lembah ombak (berbentuk elips kecil berwarna putih)
     if (hasFoam) {
         Color foamCol = isWire ? GREEN : (Color){255, 255, 255, (unsigned char)((0.15f + daylight * 0.3f) * 255.0f)};
         for (float px = startX; px <= endX; px += 12.0f) {
@@ -521,7 +520,7 @@ void DrawOmbak_Lapisan(float startX, float endX, float bottomY, float seaBaseY, 
                 float cx1 = px + 5.0f;           float cy1 = py + 2.0f + sinf(px * 0.2f) * 2.0f;
                 float rx1 = 6.0f * intensity;    float ry1 = 2.0f * intensity;
                 
-                // Pengecekan agar bagian yang tidak terlihat tidak perlu digambar
+                // Lewati buih yang berada di luar batas area ombak
                 if (cx1 + rx1 > endX || cx1 - rx1 < startX) continue;
 
                 if (!isWire) DrawEllipse((int)cx1, (int)cy1, rx1, ry1, foamCol);
@@ -546,50 +545,54 @@ void DrawOmbak_Lapisan(float startX, float endX, float bottomY, float seaBaseY, 
 }
 
 /**
- * @brief Pengendali susunan antarmuka tumpukan tiga strata tingkat kedalaman Ombak Laut (Parallax Scrolling Array).
+ * @brief Menggambar ombak laut tiga lapis untuk layar showcase Pola 2D.
+ *
+ * Setiap lapisan memiliki amplitudo, frekuensi, dan kecepatan berbeda
+ * untuk menciptakan efek kedalaman dan gerak ombak yang terlihat alami.
  */
 void DrawOmbak_Pola(float x, float y, float w, float h, bool isWire) {
     float startX = x - w/2.0f;
     float endX = x + w/2.0f;
     float bottomY = y + h/2.0f;
     float pWave = previewTime;
-    float daylight = 1.0f; // Konstanta pencahayaan absolut
+    float daylight = 1.0f; // Kecerahan penuh untuk showcase
 
-    // Lapisan 3 (Belakang), Lapisan 2 (Tengah), Lapisan 1 (Depan)
+    // Tiga lapis ombak: belakang (jauh), tengah, dan depan (dekat)
     DrawOmbak_Lapisan(startX, endX, bottomY, y, 15.0f, 0.005f, 1.5f, (Color){30, 100, 180, 255}, (Color){15, 50, 90, 255}, -40.0f, true, pWave, daylight, isWire);
     DrawOmbak_Lapisan(startX, endX, bottomY, y, 20.0f, 0.008f, 2.0f, (Color){45, 130, 220, 255}, (Color){22, 65, 110, 255}, -10.0f, true, pWave, daylight, isWire);
     DrawOmbak_Lapisan(startX, endX, bottomY, y, 25.0f, 0.010f, 2.5f, (Color){60, 160, 255, 255}, (Color){30, 80, 127, 255}, 30.0f, true, pWave, daylight, isWire);
 }
 
 /**
- * @brief Menstimulasikan mesin perender cuaca buruk kondisional dengan memancarkan curah presipitasi berkecepatan tinggi.
- * 
- * Sistem akan beralih menuju fase BADAI apabila parameter `isStorm` bernilai benar (True). 
- * Pada fase BADAI, matriks garis petir (Lightning Strike) akan dieksekusi menggunakan kurva zig-zag
- * dan algoritma pencerabangan acak hirarkis sederhana (Branching Algorithm), diimbangi filter pendar ledakan kilat layar.
+ * @brief Menggambar cuaca hujan deras atau badai petir.
+ *
+ * Saat isStorm=true, kilatan petir bercabang dan efek cahaya layar akan ditampilkan
+ * bersama butir hujan yang jauh lebih padat dan cepat.
+ *
+ * @param isStorm Jika true, tampilkan badai petir; jika false, hanya hujan biasa.
  */
 void DrawCuaca_HujanBadai(float x, float y, float w, float h, bool isStorm, bool isWire) {
-    // Batas Matriks Jendela Kliping Partikel Presipitasi (Precipitation Bounding Box)
+    // Batas area hujan dan petir
     float startX = x - w/2.0f;
     float startY = y - h/2.0f;
-    float endX = x + w/2.0f;
-    float endY = y + h/2.0f;
-    
-    // 1. Inisiasi Kilat Atmosfer Lanjut (Advanced Lightning Strike Routine)
+    float endX   = x + w/2.0f;
+    float endY   = y + h/2.0f;
+
+    // Gambar petir hanya saat mode badai aktif
     if (isStorm) {
         float cycle = fmodf(previewTime, 3.0f);
         float life = 1.0f - (cycle * 2.5f); 
 
         if (life > 0.0f) {
-            // A. Pendar Filter Layar Utama (Screen Glare Mask)
+            // Efek cahaya kilat — layar menjadi terang sesaat
             if (!isWire) {
                 DrawRectangle((int)startX, (int)startY, (int)w, (int)h, (Color){255, 255, 255, (unsigned char)(life * 150.0f)});
             }
 
-            // B. Iterasi Percabangan Linier (Linear Spline Traversal)
-            int seed = (int)(previewTime / 3.0f);
-            float lx = startX + fabsf(sinf(seed * 12.34f)) * w;
-            float cx = lx, cy = startY;
+            // Buat jalur petir zig-zag dengan seed berdasarkan waktu
+            int   seed = (int)(previewTime / 3.0f);
+            float lx   = startX + fabsf(sinf(seed * 12.34f)) * w;
+            float cx   = lx, cy = startY;
             
             Vector2 pts[20]; int pIdx = 0;
             pts[pIdx++] = (Vector2){cx, cy};
@@ -598,9 +601,9 @@ void DrawCuaca_HujanBadai(float x, float y, float w, float h, bool isStorm, bool
                 float nx = cx + (sinf(seed * pIdx * 45.6f) * 150.0f - 75.0f);
                 float ny = cy + 30.0f + fabsf(sinf(seed * pIdx * 12.3f) * 50.0f);
                 
-                // Inspeksi Batas Orientasi Petir (Lightning Trajectory Check)
+                // Batasi petir agar tidak keluar dari area yang ditentukan
                 if (nx < startX) nx = startX;
-                if (nx > endX) nx = endX;
+                if (nx > endX)   nx = endX;
                 if (ny > endY) ny = endY;
 
                 pts[pIdx++] = (Vector2){nx, ny};
@@ -617,7 +620,7 @@ void DrawCuaca_HujanBadai(float x, float y, float w, float h, bool isStorm, bool
                 } else AlgoLine((int)pts[i].x, (int)pts[i].y, (int)pts[i+1].x, (int)pts[i+1].y, GREEN);
             }
 
-            // C. Pertumbuhan Akar Cabang Sekunder (Secondary Root Branching)
+            // Buat cabang petir kecil dari titik tengah jalur utama
             if (pIdx > 4) {
                 int splitIdx = pIdx / 2;
                 cx = pts[splitIdx].x; cy = pts[splitIdx].y;
@@ -627,9 +630,9 @@ void DrawCuaca_HujanBadai(float x, float y, float w, float h, bool isStorm, bool
                     float nx = cx + (sinf(seed * i * 89.1f) * 100.0f - 50.0f);
                     float ny = cy + 40.0f;
                     
-                    // Inspeksi Batas Orientasi Cabang (Branch Trajectory Check)
+                    // Batasi cabang agar tidak keluar dari area
                     if (nx < startX) nx = startX;
-                    if (nx > endX) nx = endX;
+                    if (nx > endX)   nx = endX;
                     
                     bPts[bIdx++] = (Vector2){nx, ny};
                     cx = nx; cy = ny;
@@ -642,10 +645,10 @@ void DrawCuaca_HujanBadai(float x, float y, float w, float h, bool isStorm, bool
         }
     }
 
-    // 2. Proses menghitung posisi dan menggambar rintik hujan
-    int dropCount = isStorm ? 800 : 260;
-    float windSpeed = isStorm ? 5.0f : 1.0f; 
-    float baseFallSpeed = isStorm ? 1800.0f : 1000.0f; 
+    // Gambar rintik hujan — saat badai lebih padat dan lebih cepat
+    int   dropCount     = isStorm ? 800 : 260;
+    float windSpeed     = isStorm ? 5.0f : 1.0f;
+    float baseFallSpeed = isStorm ? 1800.0f : 1000.0f;
     
     Color dropCol = isStorm ? (Color){255, 255, 255, 100} : (Color){255, 255, 255, 50};
     if (isWire) dropCol = GREEN;
@@ -665,7 +668,7 @@ void DrawCuaca_HujanBadai(float x, float y, float w, float h, bool isStorm, bool
         Vector2 bot = {currentX, currentY};
         Vector2 top = {currentX - (windSpeed * length * 0.1f), currentY - length};
 
-        // Menggambar arah jatuhnya rintik hujan
+        // Pangkas rintik hujan agar tidak keluar dari batas atas area
         if (top.y < startY) {
             float diffY = startY - top.y;
             top.y = startY;
@@ -686,16 +689,16 @@ void DrawCuaca_HujanBadai(float x, float y, float w, float h, bool isStorm, bool
 }
 
 /**
- * @brief Memproyeksikan jejaring titik dan garis konstelasi astronomi.
- * 
- * Menggambar garis maya antar rasi bintang secara putus-putus manual.
- * sebagai substitusi teknis `setLineDash()` dari ranah Canvas API. Dalam pemutaran ranah simulasi (Wireframe mode),
- * sistem akan menggunakan fungsi primitif DDA_DashedLine buatan sendiri.
- * 
- * @param stars Larik vektor yang memuat himpunan koordinat verteks rasi bintang absolut (tanpa penskalaan offset).
- * @param starCount Batas kuantitas pemrosesan iterasi vertex rasi di dalam larik.
- * @param nightlight Determinan fase visibilitas perenderan, linear menurun menjadi pudar ketika siklus waktu siang hari.
- * @param isWire Pengondisian mode analisis bedah geometri visual.
+ * @brief Menggambar rasi bintang kustom dengan garis putus-putus penghubung.
+ *
+ * Setiap bintang digambar sebagai lingkaran kecil bercahaya, lalu dihubungkan
+ * satu per satu dengan garis putus-putus. Di mode wireframe, garis putus-putus
+ * digambar menggunakan algoritma DDA kustom (DDA_DashedLine).
+ *
+ * @param stars      Array koordinat bintang di layar.
+ * @param starCount  Jumlah bintang dalam array.
+ * @param nightlight Kecerahan berdasarkan waktu malam (0.0 = siang, 1.0 = malam).
+ * @param isWire     Jika true, hanya garis tepi yang digambar.
  */
 void DrawRasiBintang_Animasi(Vector2 *stars, int starCount, float nightlight, bool isWire) {
     if (starCount <= 0 || nightlight <= 0.0f) return;
@@ -706,17 +709,17 @@ void DrawRasiBintang_Animasi(Vector2 *stars, int starCount, float nightlight, bo
     Color cStar = isWire ? GREEN : (Color){255, 255, 255, (unsigned char)(255.0f * nightlight)};
     Color cStarGlow = isWire ? BLANK : (Color){255, 255, 255, (unsigned char)(80.0f * nightlight)};
 
-    // 1. Proyeksi Edges Graf Topologi Bintang (Star Topology Edge Projection)
+    // Gambar garis putus-putus penghubung antar bintang
     if (starCount > 1) {
         for (int i = 0; i < starCount - 1; i++) {
             Vector2 p1 = stars[i];
             Vector2 p2 = stars[i+1];
             
             if (!isWire) {
-                // Pelapisan Masker Iluminasi (Illumination Mask)
+                // Gambar cahaya samar di belakang garis
                 DrawLineEx(p1, p2, 6.0f, cLineGlow);
-                
-                // Menggambar urutan garis putus-putusnya
+
+                // Gambar garis putus-putus di atasnya
                 float dist = Vector2Distance(p1, p2);
                 float dashLen = 5.0f;
                 float gapLen = 5.0f;
@@ -731,7 +734,7 @@ void DrawRasiBintang_Animasi(Vector2 *stars, int starCount, float nightlight, bo
                     if (drawDash) {
                         Vector2 start = { p1.x + dir.x * currentDist, p1.y + dir.y * currentDist };
                         Vector2 end = { p1.x + dir.x * (currentDist + step), p1.y + dir.y * (currentDist + step) };
-                        DrawLineEx(start, end, 1.5f, cLine); // Proyeksi segmen matriks
+                        DrawLineEx(start, end, 1.5f, cLine);
                     }
                     currentDist += step;
                     drawDash = !drawDash;
@@ -742,15 +745,13 @@ void DrawRasiBintang_Animasi(Vector2 *stars, int starCount, float nightlight, bo
         }
     }
 
-    // 2. Proyeksi Node Vertex Bintang (Star Vertex Core Projection)
+    // Gambar titik cahaya di setiap posisi bintang
     for (int i = 0; i < starCount; i++) {
         if (!isWire) {
-            // Masker Iluminasi Inti (Core Illumination)
-            DrawCircleV(stars[i], 8.0f, cStarGlow);
-            // Inti Entitas Bintang Pusat (Central Core Entity)
-            DrawCircleV(stars[i], 2.0f, cStar);
+            FillCircle_Fast((int)stars[i].x, (int)stars[i].y, 8, cStarGlow);
+            FillCircle_Fast((int)stars[i].x, (int)stars[i].y, 2, cStar);
         } else {
-            DrawCircleLinesV(stars[i], 2.0f, GREEN);
+            Midcircle((int)stars[i].x, (int)stars[i].y, 2, GREEN);
         }
     }
 }

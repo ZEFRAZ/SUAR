@@ -25,7 +25,7 @@
  */
 int main(void) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-    InitWindow(1280, 720, "S U А R");
+    InitWindow(1280, 720, "S U A R");
     SetWindowMinSize(800, 600);
     SetTargetFPS(60);
 
@@ -76,9 +76,15 @@ int main(void) {
         DrawMuteButton();
         EndDrawing();
     }
+    
+    // --- AREA PERBAIKAN: PEMBERSIHAN MEMORI (MENCEGAH LEAK) ---
     UnloadAnimasi2DScreen(&animasi);
     UnloadMenu();
+    UnloadPola2D();
+    UnloadAbout();
+    UnloadGuide();
     UnloadAudio_BGM();
+    
     CloseWindow();
     return 0;
 }

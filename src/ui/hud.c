@@ -1,18 +1,19 @@
 /**
  * @file hud.c
- * @brief Inti logika perenderan antarmuka pengguna grafis (GUI) interaktif.
- * 
- * Bertanggung jawab dalam manajemen memori *font*, kalkulasi benturan pointer (Hover/Click Detection),
- * pemetaan warna tema bertingkat (Stateful Theming), dan logika *spawning* objek dinamis melalui sistem tombol.
+ * @brief Panel kontrol (HUD) untuk layar Animasi 2D.
+ *
+ * File ini mengurusi tampilan panel di sisi kiri layar yang berisi
+ * tab Kontrol (atur cuaca, waktu, ombak) dan tab Armada (tambah kapal ke simulasi).
  */
 
 #include "hud.h"
-#include <math.h> 
+#include <math.h>
+#include "draw_helpers.h"
 
 // =============================================================================
-// Manajemen Memori Tipografi Kustom (Custom Typography Memory Segregation)
+// BAGIAN 1: FONT DAN VARIABEL STATUS INTERNAL
 // =============================================================================
-static Font hudFont = { 0 };
+static Font hudFont        = { 0 };
 static bool isHudFontLoaded = false;
 
 /**
@@ -112,7 +113,7 @@ static void DrawIconShape(int type, float cx, float cy, Color col) {
             DrawLineEx((Vector2){cx-8, cy-6}, (Vector2){cx+8, cy+6}, 2.0f, col);
             break;
         case 3: // PLAY (Segitiga)
-            DrawTriangle((Vector2){cx-3, cy-5}, (Vector2){cx-3, cy+5}, (Vector2){cx+5, cy}, col);
+            FillTri_Fast((Vector2){cx-3, cy-5}, (Vector2){cx-3, cy+5}, (Vector2){cx+5, cy}, col);
             break;
         case 4: // PAUSE (Dua Garis)
             DrawRectangle((int)cx-4, (int)cy-4, 3, 9, col);

@@ -1,6 +1,14 @@
-#include "animasi2d.h"
+/**
+ * @file animasi2d.c
+ * @brief Layar simulasi animasi laut 2D secara penuh.
+ *
+ * File ini mengurusi seluruh siklus simulas: inisialisasi, pembaruan fisika
+ * tiap frame (cuaca, ombak, kapal), dan penggambaran scene lengkap dari
+ * langit, laut, gunung, mercusuar, hingga armada kapal yang berlayar.
+ */
 #include "pola2d.h"
 #include "../ui/draw_helpers.h"
+#include "../algo/midcircle.h"
 #include "../objects/kapal.h"
 #include "../objects/alam.h"
 #include "../objects/bangunan.h"
@@ -77,16 +85,16 @@ static void GetSkyColor(float time, Color *top, Color *bot) {
 }
 
 // ============================================================================
-// 1. INISIALISASI
+// BAGIAN 1: INISIALISASI
 // ============================================================================
 /**
- * @brief Inisialisasi awal layar Animasi Animasi2DScreen.
- * 
- * Memasukkan pengaturan default untuk UI, mengatur cuaca cerah (WEATHER_CLEAR), waktu, ombak, 
- * angin, dan kecepatan (speed multiplier). Termasuk juga merandom (acak) letak awal
- * untuk bintang, awan, dan burung di kanvas.
- * 
- * @param s Pointer ke data layar Animasi2DScreen.
+ * @brief Menginisialisasi semua nilai awal untuk layar Animasi 2D.
+ *
+ * Mengatur cuaca cerah, waktu mulai, kecepatan default, dan mengacak
+ * posisi awal bintang, awan, dan burung. Wajib dipanggil sekali sebelum
+ * layar ini mulai digunakan.
+ *
+ * @param s Pointer ke data status layar Animasi2D.
  */
 void InitAnimasi2DScreen(Animasi2DScreen *s) {
     s->showHUD = true; s->activeTab = TAB_CONTROL;
@@ -136,16 +144,16 @@ void InitAnimasi2DScreen(Animasi2DScreen *s) {
 }
 
 // ============================================================================
-// 2. UPDATE LOGIKA & FISIKA
+// BAGIAN 2: PEMBARUAN LOGIKA DAN FISIKA
 // ============================================================================
 /**
- * @brief Logic & Physics Update Loop untuk Layar Animasi2D.
- * 
- * Fungsi ini memperbarui pergerakan waktu siklus harian, pergeseran kapal, kecepatan angin, 
- * ombak, dan input user (misal: memencet tombol space untuk pause, dll).
- * Fungsi ini bertanggung jawab atas seluruh hitungan gerakan sebelum digambar di layar.
- * 
- * @param s Pointer ke State Layar Animasi2D.
+ * @brief Memperbarui semua nilai fisika dan logika simulasi setiap frame.
+ *
+ * Menggerakkan waktu siklus harian, memindahkan kapal, mengubah kecepatan
+ * angin dan ombak sesuai cuaca, dan memproses semua input dari pengguna
+ * (pause, wireframe, tambah bintang, dll).
+ *
+ * @param s Pointer ke data status layar Animasi2D.
  */
 void UpdateAnimasi2DScreen(Animasi2DScreen *s) {
     float rawDt = GetFrameTime();
@@ -320,18 +328,17 @@ void UpdateAnimasi2DScreen(Animasi2DScreen *s) {
 }
 
 // ============================================================================
-// 3. RENDER VISUAL (DRAWING ENGINE)
+// BAGIAN 3: PENGGAMBARAN LAYAR (RENDERING)
 // ============================================================================
 /**
- * @brief Fungsi penggerak gambar utama untuk layar Animasi2D.
- * 
- * Bertanggung jawab sepenuhnya dalam menggambar urutan lapisan objek ke layar.
- * Urutan gambarnya dari belakang ke depan: 
- * Langit -> Matahari/Bulan/Bintang -> Awan -> Kapal/Ombak (Layer 3) -> Gunung -> 
- * Kapal/Ombak (Layer 2) -> Tebing -> Kapal/Ombak (Layer 1) -> Mercusuar -> Hujan -> UI HUD.
- * Fungsi ini memakai sistem Camera2D agar grafis tidak pecah saat window di-resize.
- * 
- * @param s Pointer ke State Layar Animasi2D.
+ * @brief Menggambar seluruh objek layar Animasi 2D ke layar dari belakang ke depan.
+ *
+ * Urutan penggambaran:
+ * Langit → Matahari/Bulan/Bintang → Awan → Ombak+Kapal Jauh (lapisan belakang)
+ * → Gunung → Ombak+Kapal Tengah → Tebing → Ombak+Kapal Dekat
+ * → Mercusuar → Hujan/Badai → Panel HUD.
+ *
+ * @param s Pointer ke data status layar Animasi2D.
  */
 void DrawAnimasi2DScreen(Animasi2DScreen *s) {
     int logW = GetScreenWidth(); 
@@ -392,10 +399,10 @@ void DrawAnimasi2DScreen(Animasi2DScreen *s) {
             float twinkle = 0.5f + 0.5f * sinf(s->realTime * s->stars[i].twinkleSpeed + s->stars[i].offset);
             float alpha = nightlight * twinkle;
             if (s->isWireframe) {
-                DrawCircleLinesV((Vector2){s->stars[i].nx * W, s->stars[i].ny * H}, s->stars[i].size, GREEN);
+                Midcircle((int)(s->stars[i].nx * W), (int)(s->stars[i].ny * H), (int)s->stars[i].size, GREEN);
             } else {
                 Color starCol = (Color){255, 255, 255, (unsigned char)(255.0f * alpha)};
-                DrawCircleV((Vector2){s->stars[i].nx * W, s->stars[i].ny * H}, s->stars[i].size, starCol);
+                FillCircle_Fast((int)(s->stars[i].nx * W), (int)(s->stars[i].ny * H), (int)s->stars[i].size, starCol);
             }
         }
 
@@ -490,7 +497,7 @@ void DrawAnimasi2DScreen(Animasi2DScreen *s) {
         }
     }
 
-    float flap = sinf(s->realTime * 4.0f) * 8.0f * s->waveMult;
+    float flap = 0.0f;
 
     // --- 9. RENDER LAYER 3 (BELAKANG) ---
     int r3 = (int)((10 + daylight*20)*(1.0f-s->skyDarken));
@@ -583,8 +590,8 @@ void DrawAnimasi2DScreen(Animasi2DScreen *s) {
         Vector2 p2_in = { lCenter.x + cosf(s->beamAngle + spread*0.3f) * beamLength, lCenter.y + sinf(s->beamAngle + spread*0.3f) * beamLength };
         DrawClippedBeamTriangle(lCenter, p1_in, p2_in, minX, minY, maxX, maxY, (Color){255, 255, 200, 80});
 
-        DrawCircleV(lCenter, 6.0f * mercusuarScale, (Color){255, 255, 200, 255});
-        DrawCircleV(lCenter, 12.0f * mercusuarScale, (Color){255, 255, 100, 100});
+        FillCircle_Fast((int)lCenter.x, (int)lCenter.y, (int)(6.0f * mercusuarScale), (Color){255, 255, 200, 255});
+        FillCircle_Fast((int)lCenter.x, (int)lCenter.y, (int)(12.0f * mercusuarScale), (Color){255, 255, 100, 100});
     }
 
     // --- 12. EFEK CUACA HUJAN & PETIR ---

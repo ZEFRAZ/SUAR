@@ -1,15 +1,16 @@
 #include "kapal.h"
 #include "../ui/draw_helpers.h"
+#include "../algo/midcircle.h"
 #include <math.h>
 
 // Mengambil waktu untuk animasi dari file utama
 extern float previewTime;
 
 /**
- * @brief Rutin utilitas untuk memancarkan simulasi dinamika fluida gas (Particle Smoke System).
- * 
- * Mengeksekusi generasi sekuensial lingkaran transparan asimetris bermodalkan pseudo-RNG.
- * Posisi awal bergantung pada letak cerobong dan didorong ke atas serta tertiup angin secara periodik.
+ * @brief Menggambar efek kepulan asap dari cerobong kapal.
+ *
+ * Setiap partikel asap memiliki posisi, ukuran, dan kecepatan pudar yang
+ * berbeda agar tampak alami. Posisi dihitung dengan hash sinus deterministik.
  */
 static void DrawProceduralSmoke(float funnelX, float funnelY, float x, float y, float scale, float angle, bool isWire) {
     int numSmoke = 15;
@@ -36,17 +37,17 @@ static void DrawProceduralSmoke(float funnelX, float funnelY, float x, float y, 
         Color smokeCol = isWire ? GREEN : (Color){100, 100, 105, (unsigned char)(alpha * 255.0f)};
 
         if (cycle > 0.05f) { // Mencegah asap muncul terlalu besar di awal
-            if (!isWire) DrawCircleV(center, radius * scale, smokeCol);
-            else DrawCircleLinesV(center, radius * scale, smokeCol);
+            if (!isWire) FillCircle_Fast((int)center.x, (int)center.y, (int)(radius * scale), smokeCol);
+            else Midcircle((int)center.x, (int)center.y, (int)(radius * scale), smokeCol);
         }
     }
 }
 
 /**
- * @brief Analisator geospasial geometri (Point-in-Polygon Hit Testing).
- * 
- * Menggunakan algoritma *Ray-Casting* yang dimodifikasi untuk menembakkan sinaran lurus imajiner 
- * melintasi batas lambung kapal bajak laut. Berguna untuk menginstruksikan modul kliping khusus (Custom Clipping).
+ * @brief Mengecek apakah sebuah titik berada di dalam siluet lambung kapal bajak laut.
+ *
+ * Digunakan untuk memotong garis hiasan agar tidak keluar melewati badan kapal.
+ * Menggunakan algoritma Ray-Casting sederhana.
  */
 static bool IsPointInPirateHull(Vector2 p) {
     Vector2 poly[40]; int pIdx = 0;
@@ -71,10 +72,10 @@ static bool IsPointInPirateHull(Vector2 p) {
 }
 
 /**
- * @brief Memproyeksikan hiasan panel kayu melengkung pada lambung yang tunduk secara ketat pada kliping batas jaring.
- * 
- * Mengimitasi fungsionalitas murni `ctx.clip()` dari pustaka Canvas API. Menggunakan evaluasi Point-in-Polygon kontinu
- * setiap beberapa jarak tertentu untuk menggambar garis kurva.
+ * @brief Menggambar kurva hiasan di badan kapal yang dipotong otomatis di tepi lambung.
+ *
+ * Kurva dibentuk dari kurva Bezier kuadratik dan hanya titik yang ada di dalam
+ * lambung kapal yang ikut digambar, sehingga garis tidak melewati batas.
  */
 static void DrawClippedStrip(Vector2 p0, Vector2 p1, Vector2 p2, float tx, float ty, float scale, float angle, Color col, bool isWire) {
     int segments = 60; // Jumlah potongan garis agar kurva terlihat halus
@@ -110,9 +111,10 @@ static void DrawClippedStrip(Vector2 p0, Vector2 p1, Vector2 p2, float tx, float
 }
 
 /**
- * @brief Merender formasi kain layar segi empat tertiup tegangan angin kencang (Wind Inflated Sail).
- * 
- * Direkonstruksi secara murni memanfaatkan jaring simpul berseri (vertex arrays) dan persamaan Bezier kuadratik.
+ * @brief Menggambar satu lembar layar kapal bajak laut yang menggelembung tertiup angin.
+ *
+ * Bentuk layar dibuat dari kurva Bezier kuadratik di keempat sisinya
+ * agar terlihat membuncit seperti tertiup angin.
  */
 static void DrawPirateSail(float sx, float sy, float w, float h, Color cSail, float x, float y, float scale, float angle, float sailFlap, bool isWire) {
     Color cMidBrown = (Color){135, 75, 40, 255};
@@ -140,7 +142,7 @@ static void DrawPirateSail(float sx, float sy, float w, float h, Color cSail, fl
 }
 
 /**
- * @brief Varian render kain layar trapesium terlipat spesifik bagi variasi arsitektur Galleon (Spanish Armada).
+ * @brief Menggambar satu lembar layar kotak (square sail) bergaya Galleon yang sedikit condong.
  */
 static void DrawGalleonSail(float sx, float sy, float w, float h, Color cSail, float x, float y, float scale, float angle, float wind, bool isWire) {
     Color cMast = (Color){30, 15, 10, 255};
@@ -167,7 +169,7 @@ static void DrawGalleonSail(float sx, float sy, float w, float h, Color cSail, f
 }
 
 /**
- * @brief Memfasilitasi antarmuka perenderan independen (Standalone Wrapper) bagi efek kepulan asap pada mode Statis 2D.
+ * @brief Menggambar cerobong asap dan efek asap mengepul di layar showcase Pola 2D.
  */
 void DrawAsapKapal_Pola(float x, float y, float scale, bool isWire) {
     // 1. Menggambar dasar cerobong asap
@@ -214,9 +216,9 @@ void DrawAsapKapal_Pola(float x, float y, float scale, bool isWire) {
 
         if (cycle > 0.05f) { // Menunda kemunculan asap agar terlihat alami
             if (!isWire) {
-                DrawCircleV((Vector2){currentX, currentY}, radius * scale * 0.5f, smokeCol);
+                FillCircle_Fast((int)currentX, (int)currentY, (int)(radius * scale * 0.5f), smokeCol);
             } else {
-                DrawCircleLinesV((Vector2){currentX, currentY}, radius * scale * 0.5f, smokeCol);
+                Midcircle((int)currentX, (int)currentY, (int)(radius * scale * 0.5f), smokeCol);
             }
         }
     }
@@ -231,9 +233,10 @@ void DrawShip_Pirate(float x, float y, float scale, float angle, float sailFlap,
 }
 
 /**
- * @brief Merender arsitektur Kapal Kargo komersial berdetail presisi dengan muatan kontainer berlapis lapis.
- * 
- * Dilengkapi dengan struktur komando navigasi menjulang dan modulasi pelapisan trim cat lambung depan.
+ * @brief Menggambar Kapal Kargo lengkap dengan kontainer bertumpuk dan kabin navigasi.
+ *
+ * Kapal ini terdiri dari lambung merah di bawah, badan biru di tengah, dua baris
+ * kontainer berwarna-warni, kabin putih, antena, dan asap cerobong.
  */
 void DrawShip_Cargo(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire) {
     float s = scale; 
@@ -315,10 +318,10 @@ void DrawShip_Cargo(float x, float y, float scale, float angle, Color hullCol, C
 }
 
 /**
- * @brief Memproyeksikan struktur mega Kapal Pesiar wisata multi-strata (Multi-deck Cruise Liner).
- * 
- * Melibatkan penggambaran 9 geladak terpisah yang diderivasikan oleh konstanta kemiringan buritan dan haluan (Sloped Ratios)
- * serta geometri jendela lambung berbanjar.
+ * @brief Menggambar Kapal Pesiar besar berlapis-lapis.
+ *
+ * Kapal ini memiliki 9 strip geladak yang masing-masing miring mengikuti
+ * bentuk haluan dan buritan, dua cerobong oranye, serta deretan jendela bundar.
  */
 void DrawShip_Cruise(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire) {
     float s = scale * 1.2f;
@@ -424,10 +427,10 @@ void DrawShip_Cruise(float x, float y, float scale, float angle, Color hullCol, 
 }
 
 /**
- * @brief Menghasilkan proyeksi geometris Kapal Perusak Militer (Military Destroyer) bersiluman parsial.
- * 
- * Siluet dikonstruksi mayoritas dari sudut poligon tajam bernuansa gelap militer, disertai integrasi menara meriam 
- * (Artillery Turret) dan antena instrumen komunikasi jamak di superstruktur atas.
+ * @brief Menggambar Kapal Perang militer bergaya perusak.
+ *
+ * Dilengkapi dengan meriam depan dan belakang, kubah radar, tiang komunikasi,
+ * dan lambung berwarna abu-abu militer dengan strip panjang.
  */
 void DrawShip_Military(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire) {
     float sf = scale * 0.70f; // Pengaturan skala pengecilan ukuran
@@ -472,12 +475,12 @@ void DrawShip_Military(float x, float y, float scale, float angle, Color hullCol
 
     if (!isWire) {
         DrawCustomPoly(hFront, 4, x, y, sf, angle, cHullGrey, BLANK, false);
-        // Titik Jangkar Triangulasi Fan untuk mencegah overlap
+        // Titik pusat untuk mengisi lambung belakang dengan segitiga-segitiga
         Vector2 safeCenter = TransformPola(-100, -10, x, y, sf, angle);
         for(int i=0; i<hrIdx; i++) {
             Vector2 p1 = TransformPola(hRear[i].x, hRear[i].y, x, y, sf, angle);
             Vector2 p2 = TransformPola(hRear[(i+1)%hrIdx].x, hRear[(i+1)%hrIdx].y, x, y, sf, angle);
-            DrawTriangle(safeCenter, p1, p2, cHullGrey); DrawTriangle(safeCenter, p2, p1, cHullGrey);
+            FillTri_Fast(safeCenter, p1, p2, cHullGrey); FillTri_Fast(safeCenter, p2, p1, cHullGrey);
         }
     } else {
         // Menggambar outline luar kapal lengkap
@@ -575,10 +578,10 @@ void DrawShip_Military(float x, float y, float scale, float angle, Color hullCol
 }
 
 /**
- * @brief Merender formasi Kapal Nelayan bertiang tarik tradisional dengan rigi tali temali menjuntai.
- * 
- * Penggarisan kelengkungan perahu diproses menggunakan poligon trapesium manual guna meminimalkan biaya *overhead* 
- * dari perenderan Bezier di tingkat mesin, disertai detail mekanis semacam katrol pengait jaring.
+ * @brief Menggambar Kapal Nelayan tradisional lengkap dengan derek dan tali temali.
+ *
+ * Kapal ini dilengkapi dengan tiang mast, senar tali penahan, derek pengangkat,
+ * jangkar depan, bendera, dan kotak-kotak kargo kayu.
  */
 void DrawShip_Fishing(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire) {
 
@@ -609,7 +612,7 @@ void DrawShip_Fishing(float x, float y, float scale, float angle, Color hullCol,
         Vector2 center = TransformPola(0, 5, x, y, sf, angle);
         for(int i=0; i<hbIdx; i++) {
             Vector2 p1 = TransformPola(hBot[i].x, hBot[i].y, x, y, sf, angle); Vector2 p2 = TransformPola(hBot[(i+1)%hbIdx].x, hBot[(i+1)%hbIdx].y, x, y, sf, angle);
-            DrawTriangle(center, p1, p2, cHullBot); DrawTriangle(center, p2, p1, cHullBot);
+            FillTri_Fast(center, p1, p2, cHullBot); FillTri_Fast(center, p2, p1, cHullBot);
         }
     } else {
         for(int i=0; i<hbIdx; i++) {
@@ -632,7 +635,7 @@ void DrawShip_Fishing(float x, float y, float scale, float angle, Color hullCol,
         Vector2 center2 = TransformPola(50, -15, x, y, sf, angle);
         for(int i=0; i<hfIdx; i++) {
             Vector2 p1 = TransformPola(htFront[i].x, htFront[i].y, x, y, sf, angle); Vector2 p2 = TransformPola(htFront[(i+1)%hfIdx].x, htFront[(i+1)%hfIdx].y, x, y, sf, angle);
-            DrawTriangle(center2, p1, p2, cHullTop); DrawTriangle(center2, p2, p1, cHullTop);
+            FillTri_Fast(center2, p1, p2, cHullTop); FillTri_Fast(center2, p2, p1, cHullTop);
         }
     } else {
         Vector2 htFull[40]; int htFIdx = 0;
@@ -758,13 +761,13 @@ void DrawShip_Fishing(float x, float y, float scale, float angle, Color hullCol,
 }
 
 /**
- * @brief Menganimasikan bentuk arsitektural Kapal Riset Observatorium Laut (Oceanographic Research Vessel).
- * 
- * Memiliki pelat lambung asimetris kompleks (*L-shaped concave profile*) yang diurai secara manual menjadi sekuens  
- * segitiga jaring (Manual Triangulation) demi mencegah artefak robekan bidang render akibat geometri tak sederhana.
+ * @brief Menggambar Kapal Riset oseanografi dengan bentuk lambung bertingkat.
+ *
+ * Lambung kapal berbentuk asimetris (ada bagian yang lebih tinggi di kiri),
+ * sehingga pengisian warnanya dilakukan secara manual dengan segitiga-segitiga.
  */
 void DrawShip_Research(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire) {
-    float sf = scale * 0.75f; // const scaleOffset = 0.75;
+    float sf = scale * 0.75f; // Pengecilan skala agar ukuran kapal sesuai
     
     // Palet Warna
     Color cHull  = (Color){74, 77, 84, 255};
@@ -787,14 +790,14 @@ void DrawShip_Research(float x, float y, float scale, float angle, Color hullCol
         Vector2 tH = TransformPola(-125, 15, x, y, sf, angle);
         
         // Blok Geladak Kiri
-        DrawTriangle(tA, tB, tC, cHull); DrawTriangle(tA, tC, tB, cHull);
-        DrawTriangle(tA, tC, tH, cHull); DrawTriangle(tA, tH, tC, cHull);
+        FillTri_Fast(tA, tB, tC, cHull); FillTri_Fast(tA, tC, tB, cHull);
+        FillTri_Fast(tA, tC, tH, cHull); FillTri_Fast(tA, tH, tC, cHull);
         // Blok Badan Tengah (Turun)
-        DrawTriangle(tC, tD, tG, cHull); DrawTriangle(tC, tG, tD, cHull);
-        DrawTriangle(tC, tG, tH, cHull); DrawTriangle(tC, tH, tG, cHull);
+        FillTri_Fast(tC, tD, tG, cHull); FillTri_Fast(tC, tG, tD, cHull);
+        FillTri_Fast(tC, tG, tH, cHull); FillTri_Fast(tC, tH, tG, cHull);
         // Blok Geladak Kanan
-        DrawTriangle(tD, tE, tF, cHull); DrawTriangle(tD, tF, tE, cHull);
-        DrawTriangle(tD, tF, tG, cHull); DrawTriangle(tD, tG, tF, cHull);
+        FillTri_Fast(tD, tE, tF, cHull); FillTri_Fast(tD, tF, tE, cHull);
+        FillTri_Fast(tD, tF, tG, cHull); FillTri_Fast(tD, tG, tF, cHull);
     } else {
         Vector2 hOut[] = {{-155, -20}, {-85, -20}, {-75, -5}, {65, -5}, {75, -20}, {125, -20}, {95, 15}, {-125, 15}};
         for (int i=0; i<8; i++) {
@@ -805,7 +808,7 @@ void DrawShip_Research(float x, float y, float scale, float angle, Color hullCol
     }
     
     // 2. Garis pinggir kapal panjang
-    float tThick = isWire ? 0.0f : 3.0f; // Ketebalan outline (lineWidth 8.0)
+    float tThick = isWire ? 0.0f : 3.0f; // Ketebalan garis pinggir di mode solid
     for(float off = -tThick; off <= tThick; off += 1.0f) {
         DrawCustomLine((Vector2){-155, -20+off}, (Vector2){-85, -20+off}, x, y, sf, angle, isWire ? GREEN : cTrim);
         DrawCustomLine((Vector2){-85, -20+off}, (Vector2){-75, -5+off}, x, y, sf, angle, isWire ? GREEN : cTrim);
@@ -846,7 +849,7 @@ void DrawShip_Research(float x, float y, float scale, float angle, Color hullCol
         for(int i=0; i<clIdx; i++) {
             Vector2 p1 = TransformPola(cL[i].x, cL[i].y, x, y, sf, angle);
             Vector2 p2 = TransformPola(cL[(i+1)%clIdx].x, cL[(i+1)%clIdx].y, x, y, sf, angle);
-            DrawTriangle(safeCenter, p1, p2, cWhite); DrawTriangle(safeCenter, p2, p1, cWhite);
+            FillTri_Fast(safeCenter, p1, p2, cWhite); FillTri_Fast(safeCenter, p2, p1, cWhite);
         }
     } else {
         Vector2 cOut[30]; int coIdx=0;
@@ -889,7 +892,7 @@ void DrawShip_Research(float x, float y, float scale, float angle, Color hullCol
         Vector2 centerFront = TransformPola(-125, -30, x, y, sf, angle);
         for(int i=0; i<dcIdx; i++) {
             Vector2 p1 = TransformPola(dc[i].x, dc[i].y, x, y, sf, angle); Vector2 p2 = TransformPola(dc[(i+1)%dcIdx].x, dc[(i+1)%dcIdx].y, x, y, sf, angle);
-            DrawTriangle(centerFront, p1, p2, cDark); DrawTriangle(centerFront, p2, p1, cDark);
+            FillTri_Fast(centerFront, p1, p2, cDark); FillTri_Fast(centerFront, p2, p1, cDark);
         }
     } else {
         for(int i=0; i<dcIdx; i++) {
@@ -936,9 +939,10 @@ void DrawShip_Research(float x, float y, float scale, float angle, Color hullCol
 }
 
 /**
- * @brief Mentransformasikan blok siluet Minimalis Kapal Yacht Mewah (Luxury Yacht).
- * 
- * Fungsi gambar kapal secara spesifik dan dioptimalkan dari kode lamanya.
+ * @brief Menggambar Kapal Yacht mewah bergaya modern dan minimalis.
+ *
+ * Dilengkapi dengan kabin besar, jendela kaca lebar, pagar samping yang condong,
+ * dan dua antena tinggi di bagian belakang.
  */
 void DrawShip_Yacht(float x, float y, float scale, float angle, Color hullCol, Color detailCol, bool isWire) {
     float s = scale * 0.80f; // Menyesuaikan skala pengecilans
@@ -974,8 +978,8 @@ void DrawShip_Yacht(float x, float y, float scale, float angle, Color hullCol, C
         for(int i=0; i<mhIdx; i++) {
             Vector2 p1 = TransformPola(mHull[i].x, mHull[i].y, x, y, s, angle);
             Vector2 p2 = TransformPola(mHull[(i+1)%mhIdx].x, mHull[(i+1)%mhIdx].y, x, y, s, angle);
-            DrawTriangle(center, p1, p2, cMainHull);
-            DrawTriangle(center, p2, p1, cMainHull);
+            FillTri_Fast(center, p1, p2, cMainHull);
+            FillTri_Fast(center, p2, p1, cMainHull);
         }
     } else {
         for(int i=0; i<mhIdx; i++) {
@@ -1010,8 +1014,8 @@ void DrawShip_Yacht(float x, float y, float scale, float angle, Color hullCol, C
         for(int i=0; i<6; i++) {
             Vector2 p1 = TransformPola(cabin[i].x, cabin[i].y, x, y, s, angle);
             Vector2 p2 = TransformPola(cabin[(i+1)%6].x, cabin[(i+1)%6].y, x, y, s, angle);
-            DrawTriangle(cCenter, p1, p2, cCabin);
-            DrawTriangle(cCenter, p2, p1, cCabin);
+            FillTri_Fast(cCenter, p1, p2, cCabin);
+            FillTri_Fast(cCenter, p2, p1, cCabin);
         }
     } else {
         for(int i=0; i<6; i++) {
@@ -1062,10 +1066,11 @@ void DrawShip_Yacht(float x, float y, float scale, float angle, Color hullCol, C
 }
 
 /**
- * @brief Manajer Variasi Kapal Bajak Laut (Pirate Category Variant Manager).
- * 
- * Merouting rute perenderan kepada tiga arsitektur turunan: 
- * (0) Kapal Klasik Berlambung Hitam, (1) Heavy Galleon, atau (2) Eastern Junk Pirate.
+ * @brief Menggambar salah satu dari tiga varian Kapal Bajak Laut.
+ *
+ * Varian 0: Kapal bajak laut klasik berlambung gelap dengan tiga tiang.
+ * Varian 1: Galiung besar bergaya Eropa.
+ * Varian 2: Kapal Jong bergaya Asia Timur dengan layar merah.
  */
 void DrawShip_Pirate_Variant(float x, float y, float scale, float angle, float sailFlap, int variant, bool isWire) {
     float s = scale * 0.65f; 
@@ -1082,7 +1087,7 @@ void DrawShip_Pirate_Variant(float x, float y, float scale, float angle, float s
         Color cWhite = {245, 245, 250, 255};
 
         Color outRope = isWire ? GREEN : cRope;
-        Color outDB = isWire ? GREEN : BLANK; // Menyembunyikan garis pinggir
+        Color outDB = isWire ? GREEN : BLANK; // Garis pinggir disembunyikan di mode solid
 
         // Menggambar susunan tali
         DrawCustomLine((Vector2){-85, -115}, (Vector2){-110, -25}, x, y, s, angle, outRope);
@@ -1126,8 +1131,8 @@ void DrawShip_Pirate_Variant(float x, float y, float scale, float angle, float s
             for(int i=0; i<bIdx; i++) {
                 Vector2 p1 = TransformPola(bH[i].x, bH[i].y, x, y, s, angle);
                 Vector2 p2 = TransformPola(bH[(i+1)%bIdx].x, bH[(i+1)%bIdx].y, x, y, s, angle);
-                DrawTriangle(center, p1, p2, cDarkBrown);
-                DrawTriangle(center, p2, p1, cDarkBrown);
+                FillTri_Fast(center, p1, p2, cDarkBrown);
+                FillTri_Fast(center, p2, p1, cDarkBrown);
             }
         }
         
@@ -1243,7 +1248,7 @@ void DrawShip_Pirate_Variant(float x, float y, float scale, float angle, float s
             for(int i=0; i<bIdx-1; i++) {
                 Vector2 p1 = TransformPola(bH[i].x, bH[i].y, x, y, s, angle);
                 Vector2 p2 = TransformPola(bH[i+1].x, bH[i+1].y, x, y, s, angle);
-                DrawTriangle(center, p1, p2, cHullDark); DrawTriangle(center, p2, p1, cHullDark);
+                FillTri_Fast(center, p1, p2, cHullDark); FillTri_Fast(center, p2, p1, cHullDark);
             }
 
             for (float py = -8; py <= 8; py += 1.0f) {
@@ -1354,20 +1359,20 @@ void DrawShip_Pirate_Variant(float x, float y, float scale, float angle, float s
             Vector2 tH = TransformPola(-150, 45, x, y, sf, angle);
 
             // Bagian 1: Ekor belakang kapal
-            DrawTriangle(tA, tB, tC, cHull); DrawTriangle(tA, tC, tB, cHull);
-            DrawTriangle(tA, tC, tH, cHull); DrawTriangle(tA, tH, tC, cHull);
+            FillTri_Fast(tA, tB, tC, cHull); FillTri_Fast(tA, tC, tB, cHull);
+            FillTri_Fast(tA, tC, tH, cHull); FillTri_Fast(tA, tH, tC, cHull);
 
             // Bagian 2: Ruangan perut di lantai tengah
-            DrawTriangle(tC, tD, tG, cHull); DrawTriangle(tC, tG, tD, cHull);
-            DrawTriangle(tC, tG, tH, cHull); DrawTriangle(tC, tH, tG, cHull);
+            FillTri_Fast(tC, tD, tG, cHull); FillTri_Fast(tC, tG, tD, cHull);
+            FillTri_Fast(tC, tG, tH, cHull); FillTri_Fast(tC, tH, tG, cHull);
 
             // Bagian 3: Kurva bagian moncong kapal bawah dek
-            DrawTriangle(tD, tE, tF, cHull); DrawTriangle(tD, tF, tE, cHull);
+            FillTri_Fast(tD, tE, tF, cHull); FillTri_Fast(tD, tF, tE, cHull);
             for(int i=0; i<cpIdx-1; i++) {
                 Vector2 pt1 = TransformPola(curvePts[i].x, curvePts[i].y, x, y, sf, angle);
                 Vector2 pt2 = TransformPola(curvePts[i+1].x, curvePts[i+1].y, x, y, sf, angle);
-                DrawTriangle(tD, pt1, pt2, cHull);
-                DrawTriangle(tD, pt2, pt1, cHull);
+                FillTri_Fast(tD, pt1, pt2, cHull);
+                FillTri_Fast(tD, pt2, pt1, cHull);
             }
         } else {
             // Garis kasar kerangkanya jika aktif khusus layar ini
@@ -1419,15 +1424,16 @@ void DrawShip_Pirate_Variant(float x, float y, float scale, float angle, float s
 }
 
 /**
- * @brief Manajer Variasi Kapal Sloop Bertiang Tunggal (Sloop Category Variant Manager).
- * 
- * Mengeksekusi instruksi perenderan kepada tiga skema warna:
- * (0) Merah-Putih standar, (1) Merah-Deck Polos, (2) Kuning Terang Eksotis.
+ * @brief Menggambar salah satu dari tiga varian Kapal Layar kecil (Sloop).
+ *
+ * Varian 0: Sloop putih-merah dengan garis hijau.
+ * Varian 1: Sloop putih bersih dengan aksen merah di dek.
+ * Varian 2: Sloop kuning cerah dengan jendela biru.
  */
 void DrawShip_Sloop_Variant(float x, float y, float scale, float angle, float sailFlap, int variant, bool isWire) {
     float s = scale * 0.8f; 
-    // Sembunyikan warna putih agar menyatu dengan baik pada background laut.
-    Color outline = isWire ? GREEN : BLANK; 
+    // Garis tepi disembunyikan agar layar menyatu halus dengan background
+    Color outline = isWire ? GREEN : BLANK;
     
     if (variant == 0) {
         Color cWhite = {248, 248, 250, 255}; Color cSailShadow = {230, 230, 235, 255}; Color cGreen = {46, 172, 109, 255};  
@@ -1470,9 +1476,9 @@ void DrawShip_Sloop_Variant(float x, float y, float scale, float angle, float sa
             Vector2 p0 = TransformPola(-70, -20, x, y, s, angle); Vector2 p1 = TransformPola(-20, -20, x, y, s, angle); Vector2 p2 = TransformPola(-10, -5, x, y, s, angle);
             Vector2 p3 = TransformPola(40, -5, x, y, s, angle); Vector2 p4 = TransformPola(50, -15, x, y, s, angle); Vector2 p5 = TransformPola(85, -15, x, y, s, angle);
             Vector2 p6 = TransformPola(65, 15, x, y, s, angle); Vector2 p7 = TransformPola(-50, 15, x, y, s, angle);
-            DrawTriangle(p0, p1, p7, cYellowHull); DrawTriangle(p0, p7, p1, cYellowHull); DrawTriangle(p1, p2, p7, cYellowHull); DrawTriangle(p1, p7, p2, cYellowHull);
-            DrawTriangle(p2, p6, p7, cYellowHull); DrawTriangle(p2, p7, p6, cYellowHull); DrawTriangle(p2, p3, p6, cYellowHull); DrawTriangle(p2, p6, p3, cYellowHull);
-            DrawTriangle(p3, p4, p6, cYellowHull); DrawTriangle(p3, p6, p4, cYellowHull); DrawTriangle(p4, p5, p6, cYellowHull); DrawTriangle(p4, p6, p5, cYellowHull);
+            FillTri_Fast(p0, p1, p7, cYellowHull); FillTri_Fast(p0, p7, p1, cYellowHull); FillTri_Fast(p1, p2, p7, cYellowHull); FillTri_Fast(p1, p7, p2, cYellowHull);
+            FillTri_Fast(p2, p6, p7, cYellowHull); FillTri_Fast(p2, p7, p6, cYellowHull); FillTri_Fast(p2, p3, p6, cYellowHull); FillTri_Fast(p2, p6, p3, cYellowHull);
+            FillTri_Fast(p3, p4, p6, cYellowHull); FillTri_Fast(p3, p6, p4, cYellowHull); FillTri_Fast(p4, p5, p6, cYellowHull); FillTri_Fast(p4, p6, p5, cYellowHull);
         }
         Vector2 hullTop[] = {{-70, -20}, {-20, -20}, {-10, -5}, {40, -5}, {50, -15}, {85, -15}, {65, 15}, {-50, 15}}; DrawCustomPoly(hullTop, 8, x, y, s, angle, BLANK, outline, isWire);
         Vector2 hullBot[] = {{-50, 15}, {65, 15}, {60, 22}, {-45, 22}}; DrawCustomPoly(hullBot, 4, x, y, s, angle, cDarkYellow, outline, isWire);
@@ -1482,10 +1488,10 @@ void DrawShip_Sloop_Variant(float x, float y, float scale, float angle, float sa
 }
 
 /**
- * @brief Perender independen Galiung Kargo (Merchant Galleon / Junk).
- * 
- * Melakukan delegasi rutinitas perenderan statis (tanpa manipulasi tengkorak) 
- * kepada arsitektur perahu layar dagang besar tipe Eropa maupun lambung Junk wilayah Timur.
+ * @brief Menggambar salah satu dari dua varian Kapal Galiung dagang.
+ *
+ * Varian 0: Galiung Eropa klasik berlambung cokelat dengan layar emas.
+ * Varian 1: Galiung bergaya kapal Jong Asia dengan lambung cokelat muda dan layar putih.
  */
 
 
@@ -1544,7 +1550,7 @@ void DrawShip_Galleon(float x, float y, float scale, float angle, float sailFlap
             bH[bIdx++] = (Vector2){-105, -10}; bH[bIdx++] = (Vector2){130, -10};
             for(int i=0; i<bIdx-1; i++) {
                 Vector2 p1 = TransformPola(bH[i].x, bH[i].y, x, y, s, angle); Vector2 p2 = TransformPola(bH[i+1].x, bH[i+1].y, x, y, s, angle);
-                DrawTriangle(center, p1, p2, cHullDark); DrawTriangle(center, p2, p1, cHullDark);
+                FillTri_Fast(center, p1, p2, cHullDark); FillTri_Fast(center, p2, p1, cHullDark);
             }
 
             // Menghitung tempat yang perlu menaruh kayu secara logis hit-test polygon
@@ -1633,12 +1639,12 @@ void DrawShip_Galleon(float x, float y, float scale, float angle, float sailFlap
             Vector2 tC = TransformPola(-140, -20, x, y, sf, angle); Vector2 tD = TransformPola(150, -20, x, y, sf, angle); 
             Vector2 tE = TransformPola(260, -40, x, y, sf, angle);  Vector2 tF = TransformPola(230, -10, x, y, sf, angle);
             Vector2 tG = TransformPola(20, 45, x, y, sf, angle);    Vector2 tH = TransformPola(-150, 45, x, y, sf, angle);
-            DrawTriangle(tA, tB, tC, cHull); DrawTriangle(tA, tC, tB, cHull); DrawTriangle(tA, tC, tH, cHull); DrawTriangle(tA, tH, tC, cHull);
-            DrawTriangle(tC, tD, tG, cHull); DrawTriangle(tC, tG, tD, cHull); DrawTriangle(tC, tG, tH, cHull); DrawTriangle(tC, tH, tG, cHull);
-            DrawTriangle(tD, tE, tF, cHull); DrawTriangle(tD, tF, tE, cHull);
+            FillTri_Fast(tA, tB, tC, cHull); FillTri_Fast(tA, tC, tB, cHull); FillTri_Fast(tA, tC, tH, cHull); FillTri_Fast(tA, tH, tC, cHull);
+            FillTri_Fast(tC, tD, tG, cHull); FillTri_Fast(tC, tG, tD, cHull); FillTri_Fast(tC, tG, tH, cHull); FillTri_Fast(tC, tH, tG, cHull);
+            FillTri_Fast(tD, tE, tF, cHull); FillTri_Fast(tD, tF, tE, cHull);
             for(int i=0; i<cpIdx-1; i++) {
                 Vector2 pt1 = TransformPola(curvePts[i].x, curvePts[i].y, x, y, sf, angle); Vector2 pt2 = TransformPola(curvePts[i+1].x, curvePts[i+1].y, x, y, sf, angle);
-                DrawTriangle(tD, pt1, pt2, cHull); DrawTriangle(tD, pt2, pt1, cHull);
+                FillTri_Fast(tD, pt1, pt2, cHull); FillTri_Fast(tD, pt2, pt1, cHull);
             }
         } else {
             Vector2 junkHull[40]; int jhIdx = 0;
