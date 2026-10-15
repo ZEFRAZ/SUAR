@@ -5,6 +5,7 @@
   <p><i>Implementasi Algoritma DDA, Bresenham, dan Midpoint Circle dalam Grafika Komputer</i></p>
 
   <p>
+    <a href="https://zefraz.github.io/SUAR/"><img src="https://img.shields.io/badge/Demo%20Online-zefraz.github.io%2FSUAR-success?logo=googlechrome" alt="Live Demo"></a>
     <a href="https://github.com/ZEFRAZ/SUAR"><img src="https://img.shields.io/badge/GitHub-SUAR-blue?logo=github" alt="Repository SUAR"></a>
     <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20WebAssembly-green" alt="Platform">
     <img src="https://img.shields.io/badge/Language-C%20%2F%20Raylib-orange" alt="Language">
@@ -13,13 +14,19 @@
 
 <br/>
 
+## 🌐 Demo Online (Live Web)
+Aplikasi ini sudah di-deploy dan dapat dicoba langsung tanpa instalasi apapun melalui:  
+👉 **[https://zefraz.github.io/SUAR/](https://zefraz.github.io/SUAR/)**
+
+---
+
 ## 📖 Tentang Aplikasi SUAR
 
 **SUAR** adalah aplikasi simulasi grafika komputer interaktif berlatarkan pesisir laut dan mercusuar di malam hari yang dibangun menggunakan bahasa **C** dan pustaka **Raylib**. Aplikasi ini menyajikan visualisasi maritim dinamis lengkap dengan fisika gelombang, animasi kapal prosedural, efek atmosferik, serta pengontrolan interaktif secara *real-time*.
 
 Aplikasi **SUAR** tersedia dalam dua mode:
-1. **Desktop Native (Windows):** Berkas eksekusi langsung `SUAR.exe` yang di-compile menggunakan MinGW/W64devkit.
-2. **Web Browser (WebAssembly/HTML5):** Berjalan mulus di peramban web modern melalui kompilasi Emscripten.
+1. **Web Browser (WebAssembly/HTML5):** Berjalan mulus di peramban web modern via GitHub Pages tanpa perlu instalasi.
+2. **Desktop Native (Windows):** Berkas eksekusi langsung `SUAR.exe` yang di-compile menggunakan MinGW/W64devkit.
 
 ---
 
