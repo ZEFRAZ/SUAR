@@ -51,6 +51,8 @@ $(TARGET): $(SRCS)
 	@if not exist build_web mkdir build_web
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
 	@copy /Y icon.png build_web\icon.png >nul
+	@copy /Y icon.ico build_web\favicon.ico >nul
+	@copy /Y icon.ico build_web\icon.ico >nul
 
 clean:
 	@if exist build_web rmdir /s /q build_web

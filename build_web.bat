@@ -35,6 +35,8 @@ emcc -Os -Wall -DPLATFORM_WEB ^
 
 if %ERRORLEVEL% EQU 0 (
     copy /Y icon.png build_web\icon.png >nul
+    copy /Y icon.ico build_web\favicon.ico >nul
+    copy /Y icon.ico build_web\icon.ico >nul
     echo.
     echo [SUKSES] Kompilasi WebAssembly berhasil!
     echo File tersimpan di folder: build_web\
