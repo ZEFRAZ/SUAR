@@ -80,7 +80,7 @@ int main(void) {
 #else
     SetConfigFlags(FLAG_VSYNC_HINT);
 #endif
-    InitWindow(1280, 720, "S U A R");
+    InitWindow(1280, 720, "SUAR");
     SetWindowMinSize(800, 600);
     SetTargetFPS(60);
 

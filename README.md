@@ -1,40 +1,61 @@
 <div align="center">
-  <img src="icon.png" width="150" alt="Lighthouse Logo"/>
-  <h1>🚢 Proyek Simulasi 2D Mercusuar dan Kapal Laut 🌊</h1>
-  <p><i>Implementasi Algoritma DDA dan Bresenham dalam Simulasi Grafika 2D</i></p>
+  <img src="icon.png" width="140" alt="Logo SUAR"/>
+  <h1>SUAR</h1>
+  <p><b>Aplikasi Simulasi Grafika 2D Mercusuar dan Kapal Laut Berbasis C &amp; Raylib</b></p>
+  <p><i>Implementasi Algoritma DDA, Bresenham, dan Midpoint Circle dalam Grafika Komputer</i></p>
+
+  <p>
+    <a href="https://github.com/ZEFRAZ/SUAR"><img src="https://img.shields.io/badge/GitHub-SUAR-blue?logo=github" alt="Repository SUAR"></a>
+    <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20WebAssembly-green" alt="Platform">
+    <img src="https://img.shields.io/badge/Language-C%20%2F%20Raylib-orange" alt="Language">
+  </p>
 </div>
 
 <br/>
 
-## 📖 Deskripsi Singkat
-Proyek ini adalah pelabuhan laut interaktif berlatarkan malam hari yang dibangun menggunakan bahasa **C** dan library **Raylib**. Dikembangkan khusus sebagai penugasan / Ujian Tengah Semester mata kuliah Komputer Grafis Praktik.
+## 📖 Tentang Aplikasi SUAR
+
+**SUAR** adalah aplikasi simulasi grafika komputer interaktif berlatarkan pesisir laut dan mercusuar di malam hari yang dibangun menggunakan bahasa **C** dan pustaka **Raylib**. Aplikasi ini menyajikan visualisasi maritim dinamis lengkap dengan fisika gelombang, animasi kapal prosedural, efek atmosferik, serta pengontrolan interaktif secara *real-time*.
+
+Aplikasi **SUAR** tersedia dalam dua mode:
+1. **Desktop Native (Windows):** Berkas eksekusi langsung `SUAR.exe` yang di-compile menggunakan MinGW/W64devkit.
+2. **Web Browser (WebAssembly/HTML5):** Berjalan mulus di peramban web modern melalui kompilasi Emscripten.
+
+---
 
 ## ✨ Fitur Utama (Technical Highlight)
 
-*   📐 **Custom Algoritma Primitif Grafis:** Menggunakan algoritma **DDA (Digital Differential Analyzer)** dan **Bresenham** buatan sendiri untuk fondasi penarikan garis.
-*   🖌️ **Rasterisasi Scanline Kustom (`FillTri`):** Pewarnaan bidang (poligon) tidak menggunakan cat instan, melainkan ribuan garis mikroskopis yang digesek sejajar.
-*   🌊 **Fisika Gelombang Lautan Sinus (Double-Sine Wave):** Simulasi air yang tidak statis, dihidupkan melalui tumpukan dua fungsi ombak berperiode acak dengan kecepatan *real-time*.
-*   🚢 **Generasi Prosedural Kapal (Bezier Curve):** Lengkungan tiang layar kapal dan bentuk ombak digambar dengan rumus *Cubic Bezier Interpolation*. Komputer akan memecah belokan tersebut menjadi puluhan garis lurus pendek, yang kemudian akan disambung/digambar titik demi titik menggunakan algoritma DDA.
-*   💨 **Sistem Partikel Asap:** Asap hasil pembakaran kapal digenerate berdasarkan hitungan acak `sin()`, hukum resistansi angin asimetris, hingga akhirnya meluruh secara transparan (*Alpha Decay*).
-*   🔦 **Shader Kamera & Blending Optik Prisma:** Lampu Mercusuar menerapkan perhitungan tabrakan sudut transparan (*Cone Beam*) dan merespon pada efek malam gelap bergradasi.
+* 📐 **Custom Algoritma Primitif Grafis:** Menggunakan implementasi mandiri dari algoritma **DDA (Digital Differential Analyzer)**, **Bresenham Line**, dan **Midpoint Circle** sebagai fondasi rendering.
+* 🖌️ **Rasterisasi Scanline Kustom (`FillTri`):** Pewarnaan bidang (poligon) menggunakan algoritma sapuan garis mikroskopis yang disusun sejajar.
+* 🌊 **Fisika Gelombang Lautan Sinus (Double-Sine Wave):** Simulasi air dinamis dengan tumpukan fungsi gelombang ganda berperiode acak dengan kecepatan *real-time*.
+* 🚢 **Generasi Prosedural Kapal (Bezier Curve):** Lengkungan tiang layar kapal dan bentuk ombak digambar dengan rumus *Cubic Bezier Interpolation*, diinterpolasi menjadi garis-garis pendek yang digambar dengan algoritma DDA.
+* 💨 **Sistem Partikel Asap:** Asap cerobong kapal dihitung berbasis osilasi trigonometri acak, resistansi angin, dan peluruhan transparansi (*Alpha Decay*).
+* 🔦 **Shader Kamera & Blending Optik Prisma:** Sorotan lampu mercusuar menerapkan kerucut cahaya transparan (*Cone Beam*) adaptif terhadap suasana malam.
+* 🐬 **Fauna Laut Prosedural (Lumba-lumba):** Animasi melompat mengikuti kurva parabola dinamis dengan anatomi poligon kustom (`DrawCuaca_Dolphin`).
+* 🌫️ **Sistem Cuaca Kabut Tebal & Atmosferik:** Simulasi kabut atmosferik berlapis yang merespons perubahan cuaca secara dinamis (`WEATHER_FOG`).
+* 📊 **Dashboard Metrik & Statistik:** Panel analitik real-time yang mencatat durasi simulasi (uptime dunia nyata) dan jumlah armada kapal yang sukses melintas.
+* 🌐 **Dukungan WebAssembly (HTML5/Wasm):** Dilengkapi *custom responsive shell* modern dengan logo, favicon, dan mode layar penuh (*Fullscreen*).
 
-*   🐬 **Fauna Laut Prosedural (Lumba-lumba):** Animasi melompat kurva parabola dinamis dengan anatomi poligon kustom (`DrawCuaca_Dolphin`).
-*   🌫️ **Sistem Cuaca Kabut Tebal & Atmosferik:** Simulasi kabut atmosferik berlapis gradasi yang merespon perubahan cuaca secara dinamis (`WEATHER_FOG`).
-*   📊 **Dashboard Metrik & Statistik:** Panel analitik real-time yang mencatat durasi simulasi (uptime jam dunia nyata) dan jumlah armada kapal yang telah sukses melintas.
-*   🌐 **Dukungan Penuh WebAssembly (HTML5/Wasm):** Dapat dimainkan langsung di web browser secara lancar via Emscripten.
+---
 
 ## 🛠️ Cara Menjalankan (*Build*)
 
-### 1. Versi Desktop Windows (Native)
+### 1. Kloning Repositori
+```bash
+git clone https://github.com/ZEFRAZ/SUAR.git
+cd SUAR
+```
+
+### 2. Versi Desktop Windows (Native)
 Menggunakan MinGW / W64Devkit dan file `Makefile.win` yang sudah disediakan:
 ```bash
 # Bersihkan dan jalankan program desktop
 make -f Makefile.win clean
 make -f Makefile.win run
 ```
-*Atau klik ganda langsung pada file `SUAR.exe`.*
+*Atau klik ganda langsung pada berkas **`SUAR.exe`**.*
 
-### 2. Versi Web Browser (HTML5 / WebAssembly)
+### 3. Versi Web Browser (HTML5 / WebAssembly)
 Dapat dikompilasi menggunakan Emscripten (emsdk) dengan skrip otomatis:
 ```bash
 # Kompilasi ke WebAssembly
@@ -45,12 +66,15 @@ Dapat dikompilasi menggunakan Emscripten (emsdk) dengan skrip otomatis:
 ```
 Lalu buka browser Anda di: `http://localhost:8080/`
 
+---
+
 ## 🎮 Kontrol Navigasi Interaktif
 
-Menyajikan menu pameran dan presentasi yang ramah pengguna (*user friendly*):
-*   **[ W ]**          : *Toggle* Mode *Wireframe* (Memunculkan rangka garis matematika layar)
-*   **[ SPASI ]**      : Putar / Hentikan Animasi (*Play/Pause*)
-*   **[ H ]**          : Menyembunyikan / Menampilkan tampilan antarmuka HUD
-*   **[ UP / DOWN ]**  : Mempercepat / Memperlambat kecepatan waktu semesta
-*   **[ Klik Kiri ]**  : Menembak rasi bintang (*Hit Point Ray-casting*) / Berinteraksi dengan tombol UI
-*   **[ BACKSPACE ]**  : Kembali ke Menu Utama dari layar Animasi
+* **[ W ]**         : *Toggle* Mode *Wireframe* (Memunculkan rangka garis matematika layar)
+* **[ SPASI ]**     : Putar / Hentikan Animasi (*Play/Pause*)
+* **[ H ]**         : Menyembunyikan / Menampilkan tampilan antarmuka HUD
+* **[ T ]**         : Mengganti tema / pencahayaan visual
+* **[ C ]**         : Mengganti kondisi cuaca (Cerah, Hujan, Kabut Tebal)
+* **[ UP / DOWN ]** : Mempercepat / Memperlambat kecepatan simulasi
+* **[ Klik Kiri ]** : Menembak rasi bintang (*Hit Point Ray-casting*) / Berinteraksi dengan tombol UI
+* **[ BACKSPACE ]** : Kembali ke Menu Utama dari layar Animasi
