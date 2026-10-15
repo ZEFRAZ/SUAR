@@ -50,8 +50,7 @@ void DrawKabut_Pola(float x, float y, float scale, bool isWire);
  */
 void DrawOmbak_Pola(float x, float y, float w, float h, bool isWire);
 
-/**
- * @brief Menggambar satu lapisan ombak laut dengan buih di puncaknya.
+/** @brief Menggambar satu lapisan ombak laut dengan buih di puncaknya.
  *
  * Bentuk ombak dihitung dari gabungan dua fungsi sinus dengan frekuensi berbeda
  * agar pola gelombang tidak terlihat berulang (repetitif).
@@ -61,10 +60,16 @@ void DrawOmbak_Lapisan(float startX, float endX, float bottomY, float seaBaseY,
                         Color colTop, Color colBot, float offset, bool hasFoam,
                         float pWave, float daylight, bool isWire);
 
+/** @brief Menggambar lumba-lumba melompat dengan fase animasi. */
+void DrawLumbaLumba_Pola(float x, float y, float scale, float jumpPhase, Color c, bool isWire);
+
 /** @brief Menggambar cuaca hujan deras atau badai petir dengan kilatan dan butir hujan. */
 void DrawCuaca_HujanBadai(float x, float y, float w, float h, bool isStorm, bool isWire);
 
 /** @brief Menggambar rasi bintang kustom dengan garis putus-putus penghubung antar bintang. */
 void DrawRasiBintang_Animasi(Vector2 *stars, int starCount, float nightlight, bool isWire);
+
+/** @brief Menggambar cuaca kabut tebal yang menutupi layar. */
+void DrawCuaca_KabutTebal(float x, float y, float w, float h, bool isWire);
 
 #endif // ALAM_H

@@ -33,10 +33,14 @@ static bool  isAudioFontLoaded    = false;
  */
 void InitAudio_BGM(void) {
     InitAudioDevice();
-    bgmMusic = LoadMusicStream("Lost Saga OST_ Water Park.mp3");
+    if (FileExists("bgm.mp3")) {
+        bgmMusic = LoadMusicStream("bgm.mp3");
+    } else {
+        bgmMusic = LoadMusicStream("Lost Saga OST_ Water Park.mp3");
+    }
     if (bgmMusic.stream.buffer != NULL) {
         bgmMusic.looping = true;
-        SetMusicVolume(bgmMusic, 0.6f);
+        SetMusicVolume(bgmMusic, 0.15f);
         PlayMusicStream(bgmMusic);
         audioReady = true;
     }

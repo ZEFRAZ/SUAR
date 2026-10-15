@@ -24,16 +24,17 @@
 #define MAX_RAINDROPS      800  // Jumlah maksimal butir hujan sekaligus
 #define MAX_SHIPS           20  // Jumlah maksimal kapal aktif di layar
 #define MAX_LIGHTNINGS       5  // Jumlah maksimal petir sekaligus
+#define MAX_DOLPHINS         4  // Jumlah maksimal lumba-lumba melompat
 
 // =============================================================================
 // BAGIAN 2: TIPE ENUMERASI
 // =============================================================================
 
 // Kondisi cuaca yang bisa dipilih
-typedef enum { WEATHER_CLEAR, WEATHER_RAIN, WEATHER_STORM } WeatherType;
+typedef enum { WEATHER_CLEAR, WEATHER_RAIN, WEATHER_STORM, WEATHER_FOG } WeatherType;
 
 // Tab panel HUD yang sedang aktif
-typedef enum { TAB_CONTROL, TAB_ARMADA, TAB_MATH } UITabType;
+typedef enum { TAB_CONTROL, TAB_ARMADA, TAB_STATISTIK, TAB_MATH } UITabType;
 
 // Jenis kapal yang bisa muncul di simulasi
 typedef enum {
@@ -79,6 +80,15 @@ typedef struct {
     bool    active;
 } LightningData;
 
+// Data satu ekor lumba-lumba melompat di laut
+typedef struct {
+    float x, y;
+    float speed;
+    float jumpPhase;
+    float scale;
+    bool active;
+} DolphinData;
+
 // Data lengkap satu kapal yang aktif di simulasi
 typedef struct {
     bool     active;         // Apakah kapal ini sedang tampil di layar
@@ -123,6 +133,8 @@ typedef struct {
     float visualTime;        // Waktu hari yang ditampilkan (bergerak mulus ke target)
     float lastSpawnTime;     // Waktu terakhir kapal baru muncul
     int   shipIdCounter;     // Penghitung ID unik kapal
+    int   shipsPassed;       // Jumlah total kapal yang berhasil melintasi layar
+    double sessionStartTime; // Jam dunia nyata sejak simulasi dibuka (dihitung via GetTime())
 
     // --- Nilai Fisika Cuaca ---
     float skyDarken;         // Tingkat kegelapan langit (0.0 = terang, 1.0 = gelap)
@@ -150,6 +162,7 @@ typedef struct {
     ShipData   ships[MAX_SHIPS];                 // Data semua kapal aktif
     ShootingStar  shootingStars[MAX_SHOOTING_STARS]; // Data bintang jatuh
     LightningData lightnings[MAX_LIGHTNINGS];    // Data kilatan petir
+    DolphinData dolphins[MAX_DOLPHINS];          // Data sekawanan lumba-lumba
 
 } Animasi2DScreen;
 

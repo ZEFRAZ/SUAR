@@ -14,6 +14,57 @@
 #include "audio.h"
 #include <stddef.h> 
 
+#if defined(PLATFORM_WEB)
+    #include <emscripten/emscripten.h>
+#endif
+
+// Variabel status aplikasi yang dapat diakses oleh frame loop
+static Animasi2DScreen g_animasi;
+static ScreenState g_currentScreen = SCREEN_MENU;
+
+/**
+ * @brief Fungsi callback per-frame untuk rendering dan logika interaksi.
+ */
+static void UpdateDrawFrame(void) {
+    UpdateAudio_BGM();
+    BeginDrawing();
+
+    switch (g_currentScreen) {
+        case SCREEN_MENU:
+            ClearBackground(BLACK);
+            g_currentScreen = UpdateDrawMenu();
+            break;
+        case SCREEN_POLA_2D:
+            g_currentScreen = UpdateDrawPola2D();
+            break;
+        case SCREEN_ANIMASI_2D:
+            UpdateAnimasi2DScreen(&g_animasi);
+            DrawAnimasi2DScreen(&g_animasi);
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                InitAnimasi2DScreen(&g_animasi);
+                g_currentScreen = SCREEN_MENU;
+            }
+            break;
+        case SCREEN_ABOUT:
+            g_currentScreen = UpdateDrawAbout();
+            break;
+        case SCREEN_GUIDE:
+            g_currentScreen = UpdateDrawGuide();
+            break;
+        default: break;
+    }
+
+#if defined(PLATFORM_WEB)
+    // Di browser web, tombol Exit tidak menutup tab, melainkan tetap di menu
+    if (g_currentScreen == SCREEN_EXIT) {
+        g_currentScreen = SCREEN_MENU;
+    }
+#endif
+
+    DrawMuteButton();
+    EndDrawing();
+}
+
 /**
  * @brief Fungsi Penggerak Utama Proyek.
  * 
@@ -24,7 +75,11 @@
  * @return int 0 jika program berhasil dijalankan sampai selesai.
  */
 int main(void) {
+#if !defined(PLATFORM_WEB)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+#else
+    SetConfigFlags(FLAG_VSYNC_HINT);
+#endif
     InitWindow(1280, 720, "S U A R");
     SetWindowMinSize(800, 600);
     SetTargetFPS(60);
@@ -40,45 +95,18 @@ int main(void) {
     InitMenu();
     InitAudio_BGM();
 
-    Animasi2DScreen animasi;
-    InitAnimasi2DScreen(&animasi);
+    InitAnimasi2DScreen(&g_animasi);
 
-    ScreenState currentScreen = SCREEN_MENU;
-
-    while (!WindowShouldClose() && currentScreen != SCREEN_EXIT) {
-        UpdateAudio_BGM();
-        BeginDrawing();
-
-        switch (currentScreen) {
-            case SCREEN_MENU:
-                ClearBackground(BLACK);
-                currentScreen = UpdateDrawMenu();
-                break;
-            case SCREEN_POLA_2D:
-                currentScreen = UpdateDrawPola2D();
-                break;
-            case SCREEN_ANIMASI_2D:
-                UpdateAnimasi2DScreen(&animasi);
-                DrawAnimasi2DScreen(&animasi);
-                if (IsKeyPressed(KEY_BACKSPACE)) {
-                    InitAnimasi2DScreen(&animasi);
-                    currentScreen = SCREEN_MENU;
-                }
-                break;
-            case SCREEN_ABOUT:
-                currentScreen = UpdateDrawAbout();
-                break;
-            case SCREEN_GUIDE:
-                currentScreen = UpdateDrawGuide();
-                break;
-            default: break;
-        }
-        DrawMuteButton();
-        EndDrawing();
+#if defined(PLATFORM_WEB)
+    // Di WebAssembly / Browser, game loop diatur oleh requestAnimationFrame via Emscripten
+    emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
+#else
+    while (!WindowShouldClose() && g_currentScreen != SCREEN_EXIT) {
+        UpdateDrawFrame();
     }
     
     // --- AREA PERBAIKAN: PEMBERSIHAN MEMORI (MENCEGAH LEAK) ---
-    UnloadAnimasi2DScreen(&animasi);
+    UnloadAnimasi2DScreen(&g_animasi);
     UnloadMenu();
     UnloadPola2D();
     UnloadAbout();
@@ -86,5 +114,7 @@ int main(void) {
     UnloadAudio_BGM();
     
     CloseWindow();
+#endif
+
     return 0;
 }

@@ -755,3 +755,92 @@ void DrawRasiBintang_Animasi(Vector2 *stars, int starCount, float nightlight, bo
         }
     }
 }
+/**
+ * @brief Menggambar entitas lumba-lumba yang dapat melompat.
+ *
+ * Struktur tubuh dirakit dari beberapa himpunan poligon cembung guna mengatasi keterbatasan
+ * rendering pada bentuk cekung (concave). Susunan ini memastikan proses culling warna bekerja mulus.
+ * 
+ * @param x         Koordinat kartesian X posisi badan.
+ * @param y         Koordinat kartesian Y posisi dasar sebelum di offset oleh fase.
+ * @param scale     Skala resolusi dimensi tubuh.
+ * @param jumpPhase Fase putaran (sudut) saat ini berdasar kalkulator sinus.
+ * @param c         Warna blok material utama lumba-lumba.
+ * @param isWire    Apakah akan dirender dengan bingkai rangka hijau atau isi solid.
+ */
+void DrawLumbaLumba_Pola(float x, float y, float scale, float jumpPhase, Color c, bool isWire) {
+    // Sudut translasi lumba-lumba saat menukik/menanjak
+    float angle = cosf(jumpPhase) * -0.6f; 
+
+    // Poligon: Tubuh Utama (Cembung aerodinamis)
+    Vector2 bodyPts[] = {
+        {30, 0}, {22, -8}, {10, -12}, {-5, -14}, {-20, -12}, {-35, -8}, {-48, -4},
+        {-48, 2}, {-35, 6}, {-20, 10}, {-5, 12}, {10, 10}, {20, 6}, {28, 2}
+    };
+    
+    // Poligon: Moncong (Lurus meruncing ke depan)
+    Vector2 beakPts[] = {
+        {30, -1}, {46, 2}, {28, 3}
+    };
+    
+    // Poligon: Sirip Punggung (Melengkung asimetris ke belakangan)
+    Vector2 dorsalPts[] = {
+        {-2, -13}, {-18, -26}, {-16, -11}
+    };
+
+    // Poligon: Sirip Dada (Memiliki offset pada sisi pinggul)
+    Vector2 pectoralPts[] = {
+        {8, 8}, {-4, 24}, {0, 10}
+    };
+
+    // Poligon: Sirip Ekor Atas
+    Vector2 tailUp[] = {
+        {-46, -4}, {-62, -12}, {-52, 0}
+    };
+    
+    // Poligon: Sirip Ekor Bawah
+    Vector2 tailDn[] = {
+        {-46, 2}, {-52, 0}, {-62, 10}
+    };
+
+    Color outline = isWire ? GREEN : BLANK;
+
+    // Perenderan subkumpulan organ badan. Bagian Dorsal & Ekor berada pada z-index sejajar punggung belakang.
+    DrawCustomPoly(dorsalPts, 3, x, y, scale, angle, c, outline, isWire);
+    DrawCustomPoly(tailUp, 3, x, y, scale, angle, c, outline, isWire);
+    DrawCustomPoly(tailDn, 3, x, y, scale, angle, c, outline, isWire);
+    DrawCustomPoly(beakPts, 3, x, y, scale, angle, c, outline, isWire);
+    
+    // Menggambar tulang punggung utama tubuh
+    DrawCustomPoly(bodyPts, 14, x, y, scale, angle, c, outline, isWire);
+    
+    // Sirip Dada menjorok pada tampak samping depan
+    DrawCustomPoly(pectoralPts, 3, x, y, scale, angle, c, outline, isWire);
+
+    // Penggambaran komponen optikal (Mata) khusus layar solid
+    if (!isWire) {
+        float eyeOffsetX = 24.0f;
+        float eyeOffsetY = -2.0f;
+        
+        // Mempertahankan rotasi absolut koordinat mata relatif terhadap titik poros tubuh
+        float eyeX = x + (eyeOffsetX * cosf(angle) - eyeOffsetY * sinf(angle)) * scale;
+        float eyeY = y + (eyeOffsetX * sinf(angle) + eyeOffsetY * cosf(angle)) * scale;
+        
+        DrawCircle((int)eyeX, (int)eyeY, 2.0f * scale, (Color){20, 20, 30, 255});
+    }
+}
+
+/** 
+ * @brief Menggambar cuaca kabut tebal yang menutupi layar. 
+ * 
+ * ==========================================================================================
+ * DESKRIPSI: Fitur environment cuaca tambahan berupa efek kabut tebal ("tambahkan cuaca berkabut").
+ * ==========================================================================================
+ */
+void DrawCuaca_KabutTebal(float x, float y, float w, float h, bool isWire) {
+    if (!isWire) {
+        Color topFog = (Color){220, 230, 235, 80}; 
+        Color botFog = (Color){190, 200, 210, 140};
+        DrawRectangleGradientV((int)(x - w/2.0f), (int)(y - h/2.0f), (int)w, (int)h, topFog, botFog);
+    }
+}

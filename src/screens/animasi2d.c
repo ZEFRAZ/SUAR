@@ -110,8 +110,14 @@ void InitAnimasi2DScreen(Animasi2DScreen *s) {
     s->pWave = 0.0f; s->pCloud = 0.0f; s->pBird = 0.0f;
     s->lastSpawnTime = 0.0f;
     s->shipIdCounter = 0;
+    s->shipsPassed = 0;
+    s->sessionStartTime = GetTime();
     
     s->customStarCount = 0;
+
+    for(int i = 0; i < MAX_DOLPHINS; i++) {
+        s->dolphins[i].active = false;
+    }
     
 
     for(int i = 0; i < MAX_STARS; i++) {
@@ -185,6 +191,8 @@ void UpdateAnimasi2DScreen(Animasi2DScreen *s) {
         tDarken = 0.4f; tWaveM = 1.5f * s->waveIntensity; tWind = 5.0f * s->windSpeedMult; tBird = 1.5f;
     } else if (s->weather == WEATHER_STORM) {
         tDarken = 0.7f; tWaveM = 2.5f * s->waveIntensity; tWind = 15.0f * s->windSpeedMult; tBird = 2.5f;
+    } else if (s->weather == WEATHER_FOG) {
+        tDarken = 0.2f; tWaveM = 0.6f * s->waveIntensity; tWind = 0.5f * s->windSpeedMult; tBird = 0.5f;
     }
 
     float wLerp = 0.8f * uiDt;
@@ -248,13 +256,44 @@ void UpdateAnimasi2DScreen(Animasi2DScreen *s) {
     }
     
     if (s->isPlaying) {
-        // --- UPDATE PERGERAKAN KAPAL & EMISI ASAP ---
+        // --- PROSES 4: PEMBARUAN POSISI GERAK LUMBA-LUMBA ---
+        for (int i = 0; i < MAX_DOLPHINS; i++) {
+            if (s->dolphins[i].active) {
+                // Translasi kecepatan lurus linear relatif terhadap layar
+                s->dolphins[i].x += s->dolphins[i].speed * s->shipSpeedMult * dt;
+                
+                // Menambahkan interval fase berdasarkan detak waktu yang berlaku
+                s->dolphins[i].jumpPhase += dt * 2.5f; 
+                
+                // Despawanisasi saat satu siklus lengkungan PI telah berakhir
+                if (s->dolphins[i].jumpPhase >= PI) {
+                    s->dolphins[i].active = false; 
+                }
+            } else {
+                // Probabilitas kemunculan objek secara periodik
+                if (GetRandomValue(0, 1000) < 5) { 
+                    s->dolphins[i].active = true;
+                    s->dolphins[i].x = GetRandomValue(100, W_log - 200); 
+                    s->dolphins[i].y = seaY_log + GetRandomValue(10, 40); 
+                    s->dolphins[i].speed = (float)GetRandomValue(80, 150);
+                    
+                    // Standarisasi fase awal (0) untuk kurva lompat yang konstan
+                    s->dolphins[i].jumpPhase = 0.0f; 
+                    s->dolphins[i].scale = (float)GetRandomValue(6, 10) / 10.0f;
+                }
+            }
+        }
+
+        // --- PROSES 5: PEMBARUAN KOORDINAT KAPAL LAUT & PELAPORAN DATA ARMADA ---
         for (int i = 0; i < MAX_SHIPS; i++) {
             if (s->ships[i].active) {
+                // Majukan titik jangkar sumbu X sesuai perbandingan FrameTime aktual
                 s->ships[i].x += s->ships[i].speed * s->shipSpeedMult * dt;
                 
-                if (s->ships[i].x > W_log + 600.0f) {
+                // Inspeksi batas tepian layar kanan untuk memicu registrasi 'Ship Passed' (Margin presisi: 220)
+                if (s->ships[i].x > W_log + 220.0f) {
                     s->ships[i].active = false;
+                    s->shipsPassed++;
                 }
             }
         }
@@ -545,6 +584,20 @@ void DrawAnimasi2DScreen(Animasi2DScreen *s) {
     
     DrawMercusuar_Pola(lhX, lhY, mercusuarScale, 1, s->isWireframe);
 
+    // --- BAGIAN 10.8: PENERAPAN LAPISAN LUMBA-LUMBA ---
+    for (int i = 0; i < MAX_DOLPHINS; i++) {
+        if (s->dolphins[i].active) {
+            float jumpH = 80.0f * s->dolphins[i].scale;
+            
+            float dy = sinf(s->dolphins[i].jumpPhase) * jumpH;
+            float actualY = s->dolphins[i].y - dy;
+            
+            Color dolphinCol = LerpColor((Color){70, 80, 90, 255}, (Color){20, 25, 30, 255}, s->skyDarken);
+            
+            DrawLumbaLumba_Pola(s->dolphins[i].x, actualY, s->dolphins[i].scale, s->dolphins[i].jumpPhase, dolphinCol, s->isWireframe);
+        }
+    }
+
     // --- 11. RENDER LAYER 1 (DEPAN) & PARTIKEL ASAP ---
     int r1 = (int)((20 + daylight*40)*(1.0f-s->skyDarken));
     int g1 = (int)((60 + daylight*100)*(1.0f-s->skyDarken));
@@ -565,7 +618,6 @@ void DrawAnimasi2DScreen(Animasi2DScreen *s) {
 
     // --- 11.2 EFEK MALAM & SAKELAR MERCUSUAR ---
     if (nightlight > 0.0f && !s->isWireframe) {
-        // Layar digelapkan secara halus / smooth
         DrawRectangle(0, 0, W, H, (Color){5, 10, 20, (unsigned char)(nightlight * 140.0f)});
     }
 
@@ -594,10 +646,12 @@ void DrawAnimasi2DScreen(Animasi2DScreen *s) {
         FillCircle_Fast((int)lCenter.x, (int)lCenter.y, (int)(12.0f * mercusuarScale), (Color){255, 255, 100, 100});
     }
 
-    // --- 12. EFEK CUACA HUJAN & PETIR ---
-    if (s->weather != WEATHER_CLEAR) {
+    // --- 12. EFEK CUACA HUJAN, PETIR ATAU KABUT ---
+    if (s->weather == WEATHER_RAIN || s->weather == WEATHER_STORM) {
         bool isStorm = (s->weather == WEATHER_STORM);
         DrawCuaca_HujanBadai(W / 2.0f, H / 2.0f, W, H, isStorm, s->isWireframe);
+    } else if (s->weather == WEATHER_FOG) {
+        DrawCuaca_KabutTebal(W / 2.0f, H / 2.0f, W, H, s->isWireframe);
     }
 
     EndMode2D();

@@ -18,23 +18,39 @@ Proyek ini adalah pelabuhan laut interaktif berlatarkan malam hari yang dibangun
 *   💨 **Sistem Partikel Asap:** Asap hasil pembakaran kapal digenerate berdasarkan hitungan acak `sin()`, hukum resistansi angin asimetris, hingga akhirnya meluruh secara transparan (*Alpha Decay*).
 *   🔦 **Shader Kamera & Blending Optik Prisma:** Lampu Mercusuar menerapkan perhitungan tabrakan sudut transparan (*Cone Beam*) dan merespon pada efek malam gelap bergradasi.
 
+*   🐬 **Fauna Laut Prosedural (Lumba-lumba):** Animasi melompat kurva parabola dinamis dengan anatomi poligon kustom (`DrawCuaca_Dolphin`).
+*   🌫️ **Sistem Cuaca Kabut Tebal & Atmosferik:** Simulasi kabut atmosferik berlapis gradasi yang merespon perubahan cuaca secara dinamis (`WEATHER_FOG`).
+*   📊 **Dashboard Metrik & Statistik:** Panel analitik real-time yang mencatat durasi simulasi (uptime jam dunia nyata) dan jumlah armada kapal yang telah sukses melintas.
+*   🌐 **Dukungan Penuh WebAssembly (HTML5/Wasm):** Dapat dimainkan langsung di web browser secara lancar via Emscripten.
+
 ## 🛠️ Cara Menjalankan (*Build*)
 
-Proyek ini telah dikompilasi mulus di *environment* Windows memakai MSYS2 (W64Devkit). Cukup menggunakan file `Makefile.win` yang sudah disediakan:
-
+### 1. Versi Desktop Windows (Native)
+Menggunakan MinGW / W64Devkit dan file `Makefile.win` yang sudah disediakan:
 ```bash
-# Untuk membersihkan file kompilasi lama
+# Bersihkan dan jalankan program desktop
 make -f Makefile.win clean
-
-# Untuk kompilasi dan langsung menjalankan program
 make -f Makefile.win run
 ```
+*Atau klik ganda langsung pada file `SUAR.exe`.*
+
+### 2. Versi Web Browser (HTML5 / WebAssembly)
+Dapat dikompilasi menggunakan Emscripten (emsdk) dengan skrip otomatis:
+```bash
+# Kompilasi ke WebAssembly
+.\build_web.bat
+
+# Jalankan web server lokal
+.\run_web.bat
+```
+Lalu buka browser Anda di: `http://localhost:8080/`
 
 ## 🎮 Kontrol Navigasi Interaktif
 
-Menyajikan menu pameran dan presentasi, Proyek ini ramah (*user friendly*).
+Menyajikan menu pameran dan presentasi yang ramah pengguna (*user friendly*):
 *   **[ W ]**          : *Toggle* Mode *Wireframe* (Memunculkan rangka garis matematika layar)
 *   **[ SPASI ]**      : Putar / Hentikan Animasi (*Play/Pause*)
-*   **[ H ]**          : Menyembunyikan tampilan antar-muka HUD
+*   **[ H ]**          : Menyembunyikan / Menampilkan tampilan antarmuka HUD
 *   **[ UP / DOWN ]**  : Mempercepat / Memperlambat kecepatan waktu semesta
-*   **[ Klik Kiri ]**  : Menembak rasi bintang (*Hit Point Ray-casting*)
+*   **[ Klik Kiri ]**  : Menembak rasi bintang (*Hit Point Ray-casting*) / Berinteraksi dengan tombol UI
+*   **[ BACKSPACE ]**  : Kembali ke Menu Utama dari layar Animasi

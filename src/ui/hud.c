@@ -140,6 +140,11 @@ static void DrawIconShape(int type, float cx, float cy, Color col) {
             DrawLineEx((Vector2){cx-2, cy+4}, (Vector2){cx+1, cy+4}, 1.5f, col);
             DrawLineEx((Vector2){cx+1, cy+4}, (Vector2){cx-1, cy+8}, 1.5f, col);
             break;
+        case 8: // KABUT (Garis datar bertumpuk)
+            DrawLineEx((Vector2){cx-5, cy-4}, (Vector2){cx+5, cy-4}, 2.0f, col);
+            DrawLineEx((Vector2){cx-7, cy}, (Vector2){cx+7, cy}, 2.0f, col);
+            DrawLineEx((Vector2){cx-3, cy+4}, (Vector2){cx+3, cy+4}, 2.0f, col);
+            break;
     }
 }
 
@@ -347,16 +352,21 @@ void DrawCustomHUD(Animasi2DScreen *s) {
 
     if (!s->showHUD) return; 
     
-    int panelHeight = (s->activeTab == TAB_CONTROL) ? 350 : 400;
+    int panelHeight = 400;
+    if (s->activeTab == TAB_CONTROL) panelHeight = 350;
+    else if (s->activeTab == TAB_STATISTIK) panelHeight = 250;
+
     Rectangle panelRec = { 20, 60, 310, panelHeight }; 
     DrawRectangleRounded(panelRec, 0.05f, 10, (Color){ 10, 15, 25, 220 });
     DrawRectangleRoundedLines(panelRec, 0.05f, 10, (Color){ 255, 255, 255, 30 }); 
     
-    Rectangle tabCtrl = { 35, 75, 135, 26 };
-    Rectangle tabArmd = { 175, 75, 135, 26 };
+    Rectangle tabCtrl = { 28, 75, 90, 26 };
+    Rectangle tabArmd = { 128, 75, 90, 26 };
+    Rectangle tabStat = { 228, 75, 90, 26 };
     
     if (DrawOceanButton(tabCtrl, "KONTROL", mousePos, s->activeTab == TAB_CONTROL, false)) s->activeTab = TAB_CONTROL;
     if (DrawOceanButton(tabArmd, "ARMADA", mousePos, s->activeTab == TAB_ARMADA, false)) s->activeTab = TAB_ARMADA;
+    if (DrawOceanButton(tabStat, "STATISTIK", mousePos, s->activeTab == TAB_STATISTIK, false)) s->activeTab = TAB_STATISTIK;
     
     DrawLine(20, 115, 330, 115, (Color){ 255, 255, 255, 20 }); 
 
@@ -366,11 +376,12 @@ void DrawCustomHUD(Animasi2DScreen *s) {
     if (s->activeTab == TAB_CONTROL) {
         
         int iconPlay = s->isPlaying ? 4 : 3;
-        if (DrawOceanIconButton((Rectangle){35, contentY, 40, 26}, iconPlay, "", mousePos, s->isPlaying, false)) s->isPlaying = !s->isPlaying;
+        if (DrawOceanIconButton((Rectangle){30, contentY, 35, 26}, iconPlay, "", mousePos, s->isPlaying, false)) s->isPlaying = !s->isPlaying;
         
-        if (DrawOceanIconButton((Rectangle){85, contentY, 70, 26}, 5, "", mousePos, s->weather == WEATHER_CLEAR, false)) s->weather = WEATHER_CLEAR;
-        if (DrawOceanIconButton((Rectangle){165, contentY, 70, 26}, 6, "", mousePos, s->weather == WEATHER_RAIN, false)) s->weather = WEATHER_RAIN;
-        if (DrawOceanIconButton((Rectangle){245, contentY, 65, 26}, 7, "", mousePos, s->weather == WEATHER_STORM, false)) s->weather = WEATHER_STORM;
+        if (DrawOceanIconButton((Rectangle){75, contentY, 55, 26}, 5, "", mousePos, s->weather == WEATHER_CLEAR, false)) s->weather = WEATHER_CLEAR;
+        if (DrawOceanIconButton((Rectangle){135, contentY, 55, 26}, 6, "", mousePos, s->weather == WEATHER_RAIN, false)) s->weather = WEATHER_RAIN;
+        if (DrawOceanIconButton((Rectangle){195, contentY, 55, 26}, 7, "", mousePos, s->weather == WEATHER_STORM, false)) s->weather = WEATHER_STORM;
+        if (DrawOceanIconButton((Rectangle){255, contentY, 55, 26}, 8, "", mousePos, s->weather == WEATHER_FOG, false)) s->weather = WEATHER_FOG;
 
         contentY += 45;
         DrawHudText("Siklus Waktu", 35, contentY, 11.0f, LIGHTGRAY);
@@ -433,5 +444,34 @@ void DrawCustomHUD(Animasi2DScreen *s) {
         if(DrawOceanShipButton((Rectangle){colX[2], contentY, 85, 32}, "SLOOP", "(Red Trim)", mousePos, isDis)) SpawnShipManual(s, SHIP_SLOOP, 1);
         contentY += 38;
         if(DrawOceanShipButton((Rectangle){colX[0], contentY, 85, 32}, "SLOOP", "(Gold Hull)", mousePos, isDis)) SpawnShipManual(s, SHIP_SLOOP, 2);
+    }
+    // ==========================================================================================
+    // DESKRIPSI: "Papan informasi atau dashboard statistik yang menampilkan jumlah kapal 
+    //             yang telah melintas, durasi simulasi (dalam jam dunia nyata), 
+    //             tambahkan cuaca berkabut."
+    // ==========================================================================================
+    else if (s->activeTab == TAB_STATISTIK) {
+        DrawHudText("Dashboard Metrik", 35, contentY, 14.0f, WHITE);
+        contentY += 30;
+        
+        // Kotak 1: Durasi Uptime Dunia Nyata
+        double uptimeSec = GetTime() - s->sessionStartTime;
+        int upH = (int)uptimeSec / 3600;
+        int upM = (int)(uptimeSec / 60) % 60;
+        int upS = (int)uptimeSec % 60;
+        
+        Rectangle box1 = { 35, contentY, 280, 36 };
+        DrawRectangleRounded(box1, 0.3f, 10, (Color){ 20, 35, 55, 200 });
+        DrawRectangleRoundedLines(box1, 0.3f, 10, (Color){ 40, 120, 180, 150 });
+        DrawHudText("Durasi Simulasi", 45, contentY + 12, 12.0f, LIGHTGRAY);
+        DrawHudText(TextFormat("%02d:%02d:%02d", upH, upM, upS), 235, contentY + 12, 12.0f, SKYBLUE);
+        contentY += 46;
+
+        // Kotak 2: Kapal Terbang/Melintas
+        Rectangle box2 = { 35, contentY, 280, 36 };
+        DrawRectangleRounded(box2, 0.3f, 10, (Color){ 20, 35, 55, 200 });
+        DrawRectangleRoundedLines(box2, 0.3f, 10, (Color){ 40, 120, 180, 150 });
+        DrawHudText("Kapal Selesai Melintas", 45, contentY + 12, 12.0f, LIGHTGRAY);
+        DrawHudText(TextFormat("%d Armada", s->shipsPassed), 235, contentY + 12, 12.0f, GREEN);
     }
 }
